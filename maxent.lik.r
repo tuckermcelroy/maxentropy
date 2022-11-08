@@ -88,7 +88,7 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
   # compute time series residuals
   sqrlik <- svd(lik.mat)
   sqrlik <- sqrlik$u %*% solve(diag(sqrt(sqrlik$d))) %*% t(sqrlik$u)
-  ts.resid <- sqrlik %*% (x-mu)
+  ts.resid <- sqrlik %*% (x[,1,drop=FALSE]-v %*% eta)
   
   if (outFlag == 1) out <- lik
   if (outFlag == 2) out <- ts.resid
