@@ -5,15 +5,23 @@ maxent.prep <- function(x,ao,ls,d,ds)
   #  This version presumes D > 0
   #
   # Inputs:
-  #   x: time series of length n
+  #   x: time series matrix object with n rows, 
+  #     first column is data vector,
+  #     subsequent columns (if any) are regressors 
   #   ao: vector of elements in {1,...,n} of AO times
   #   ls: vector of elements in {1,...,n} of LS times
   #   d: order of regular differencing (altogether)
   #   ds: order of seasonal aggregation
-  #
+  # Outputs:
+  #   x.diff: differenced input x, in paper it's Delta %*% x
+  #   B.mat: a matrix used in the differencing operation, see paper
+  #   Delta.inv: inverse of tilde{Delta}_P from paper
+  #   RQ.mat: product R %*% Q from paper
+  #   Omega.mat: Omega matrix from paper
+  #   Lambda.mat: Lambda matrix from paper
   # Requires: polymult.r, maxent.reg.r
   
-  n <- length(x)
+  n <- dim(x)[1]
   s <- frequency(x)
   deltaS <- 1
   if(ds==1) deltaS <- rep(1,s)
@@ -69,7 +77,8 @@ maxent.prep <- function(x,ao,ls,d,ds)
   temp <- Q.mat %*% Lambda.mat %*% Delta.inv
   A.mat <- temp[-seq(1,D),1:D,drop=FALSE]
   B.mat <- temp[-seq(1,D),(D+1):n]
-  x.diff <- cbind(-A.mat,diag(n-D-length(exts))) %*% Q.mat %*% t(K.mat) %*% Xtilde.inv %*% x
+  x.diff <- cbind(-A.mat,diag(n-D-length(exts))) %*% Q.mat %*% 
+    Lambda.mat %*% x
   RQ.mat <- rbind(diag(n-length(exts))[1:D,,drop=FALSE],
                   cbind(-A.mat,diag(n-D-length(exts)))) %*% Q.mat
   

@@ -5,7 +5,9 @@ maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
   #  This version presumes D > 0
   #
   # Inputs:
-  #   x: time series of length n
+  #   x: time series matrix object with n rows, 
+  #     first column is data vector,
+  #     subsequent columns (if any) are regressors 
   #   ao: vector of elements in {1,...,n} of AO times
   #   ls: vector of elements in {1,...,n} of LS times
   #   p: order of regular AR
@@ -36,15 +38,18 @@ maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
     return(phi)
   }
   
-  n <- length(x)
+  n <- dim(x)[1]
+  v <- x[,-1,drop=FALSE]
+  num.reg <- dim(v)[2]
   s <- frequency(x)
   prep <- maxent.prep(x,ao,ls,d,ds)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
+  x <- x[,1]
   
   # fit the SARIMA model
   r <- p+q+ps+qs
-  psi.init <- rep(0,r+2)
+  psi.init <- rep(0,r+1+num.reg)
   ent.mle <- nlminb(start=psi.init,objective=maxent.lik,x=x.diff,
                     s=s,p=p,q=q,ps=ps,qs=qs,B.mat=B.mat,outFlag=1)
   psi <- ent.mle$par
