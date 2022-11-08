@@ -6,7 +6,9 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #     and gives test statistic for its magnitude.
   #   Provides shrinkage of extremes, and returns entropified data.
   # Inputs:
-  #   x: time series of length n
+  #   x: time series matrix object with n rows, 
+  #     first column is data vector,
+  #     subsequent columns (if any) are regressors 
   #   ao: vector of elements in {1,...,n} of AO times
   #   ls: vector of elements in {1,...,n} of LS times
   #   psi: vector of pre-parameters for SARIMA model
@@ -20,7 +22,11 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #     set to 1 for full shrinkage (use conditional expectation),
   #     set to 0 for no shrinkage (keep raw data)
   
-  n <- length(x)
+  n <- dim(x)[1]
+  v <- x[,-1,drop=FALSE]
+  num.reg <- dim(v)[2]
+  r <- length(psi) - (1+num.reg)
+  eta <- psi[-seq(1,r+1)]
   s <- frequency(x)
   deltaS <- 1
   if(ds==1) deltaS <- rep(1,s)
@@ -38,13 +44,15 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   Gamma.alt <- diag(n)[,1:(n-length(exts)),drop=FALSE]
   Gamma.alt[(D+1):n,(D+1):(n-length(exts))] <- Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat))
-  x.extreme <- prep[[5]] %*% x
-  x.adjust <- prep[[5]] %*% prep[[3]] %*% Gamma.alt %*% prep[[4]] %*% prep[[6]] %*% x
-  x.regular <- prep[[6]] %*% x
+  x.extreme <- prep[[5]] %*% x[,1,drop=FALSE]
+  x.adjust <- prep[[5]] %*% (v %*% eta + prep[[3]] %*% Gamma.alt %*% 
+    prep[[4]] %*% prep[[6]] %*% (x[,1,drop=FALSE]-v %*% eta))
+  x.regular <- prep[[6]] %*% x[,1,drop=FALSE]
   Gamma.mse <- matrix(0,n,n)
   Gamma.mse[(D+1):n,(D+1):n] <- Gamma.mat - Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat)) %*% B.mat %*% Gamma.mat
-  x.mse <- prep[[5]] %*% prep[[3]] %*% Gamma.mse %*% t(prep[[3]]) %*% t(prep[[5]])
+  x.mse <- prep[[5]] %*% prep[[3]] %*% Gamma.mse %*% 
+    t(prep[[3]]) %*% t(prep[[5]])
   
   wald <- t(x.extreme - x.adjust) %*% solve(x.mse) %*% (x.extreme - x.adjust)
   alpha <- max(alpha,1-pchisq(wald,df=r))

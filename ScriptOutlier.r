@@ -29,7 +29,7 @@ plot(claims)
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\Research\\MaxEntOutlier\\Figures")
 
 ## get a figure
-pdf(file="ClaimsStream.pdf",width=5, height=4)
+#pdf(file="ClaimsStream.pdf",width=5, height=4)
 plot(log(claims),ylab="Log Claims",xlab="Year")
 dev.off()
 
@@ -54,7 +54,7 @@ data.ls <- rep(NA,n)
 data.ls[ls] <- x[ls]
 
 ## get a figure
-pdf(file="Claims2021.pdf",width=5, height=4)
+#pdf(file="Claims2021.pdf",width=5, height=4)
 plot(dataNew.ts,ylab="Claims",xlab="Year")  
 points(ts(data.ao,frequency=period,start=c(2019,1)),col=2)
 points(ts(data.ls,frequency=period,start=c(2019,1)),col=3)
@@ -70,14 +70,16 @@ qs <- 0
 d <- 1
 ds <- 0
  
-fit.mle <- maxent.fit(x,ao,ls,p,q,ps,qs,d,ds)
+datareg.ts <- ts(cbind(x,seq(1,n)),start=start(x),frequency=period)
+fit.mle <- maxent.fit(datareg.ts,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
 psi.mle <- fit.mle[[2]]$par
-ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),frequency=period,start=c(2019,1))
+ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
+               frequency=period,start=c(2019,1))
 plot(ts.resid)
 
 ## get a figure
-pdf(file="AcfResid.pdf",width=5, height=4)
+#pdf(file="AcfResid.pdf",width=5, height=4)
 acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = period,main="Residual")
 dev.off()
 
@@ -86,7 +88,7 @@ dev.off()
 
 # First do full shrinkage
 alpha <- 1
-out <- maxent.ev(x,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+out <- maxent.ev(datareg.ts,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
 1-pchisq(out[[5]],df=r)
 kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[5]])
 x.entropy <- out[[4]]
