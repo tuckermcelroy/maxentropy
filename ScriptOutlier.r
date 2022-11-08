@@ -157,10 +157,12 @@ qs <- 1
 d <- 2
 ds <- 1
 
-fit.mle <- maxent.fit(data.ts,ao,ls,p,q,ps,qs,d,ds)
+datareg.ts <- ts(cbind(data.ts,rep(1,n)),start=start(x),frequency=period)
+fit.mle <- maxent.fit(datareg.ts,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
 psi.mle <- fit.mle[[2]]$par
-ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),frequency=period,start=start(data.ts))
+ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
+               frequency=period,start=start(data.ts))
 plot(ts.resid)
 acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
 spec.ar(ts.resid[-seq(1,r+d+ds*period)])
