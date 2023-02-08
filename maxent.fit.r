@@ -1,11 +1,11 @@
-maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
+maxent.fit <- function(datareg,ao,ls,p,q,ps,qs,d,ds)
 {
   # maxent.fit by Tucker McElroy
   #   fits SARIMA model using maximum entropy framework
   #  This version presumes D > 0
   #
   # Inputs:
-  #   x: time series matrix object with n rows, 
+  #   datareg: time series matrix object with n rows, 
   #     first column is data vector,
   #     subsequent columns (if any) are regressors 
   #   ao: vector of elements in {1,...,n} of AO times
@@ -48,14 +48,14 @@ maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
     return(phi)
   }
   
-  n <- dim(x)[1]
-  v <- x[,-1,drop=FALSE]
+  n <- dim(datareg)[1]
+  v <- datareg[,-1,drop=FALSE]
   num.reg <- dim(v)[2]
-  s <- frequency(x)
-  prep <- maxent.prep(x,ao,ls,d,ds)
+  s <- frequency(datareg)
+  prep <- maxent.prep(datareg,ao,ls,d,ds)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
-  x <- x[,1]
+#  x <- datareg[,1]
   
   # fit the SARIMA model
   r <- p+q+ps+qs
@@ -70,7 +70,7 @@ maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
   if (q==0) { ma <- NULL } else { ma <- psi2phi(psi[(p+1):(p+q)]) }
   if (ps==0) { ars <- NULL } else { ars <- psi2phi(psi[(p+q+1):(p+q+ps)]) }	
   if (qs==0) { mas <- NULL } else { mas <- psi2phi(psi[(p+q+ps+1):(p+q+ps+qs)]) }
-  param <- c(ar,ma,ars,mas,exp(psi[r+1]),psi[r+2])
+  param <- c(ar,ma,ars,mas,exp(psi[r+1]),psi[-seq(1,r+1)])
   
   x.resid <- ts(maxent.lik(psi,x.diff,s,p,q,ps,qs,B.mat,2),names="Residual",frequency=s)
   return(list(param,ent.mle,x.resid))

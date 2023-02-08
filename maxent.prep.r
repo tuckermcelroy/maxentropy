@@ -91,7 +91,7 @@ maxent.prep <- function(datareg,ao,ls,d,ds)
   A.mat <- temp[-seq(1,D),1:D,drop=FALSE]
   B.mat <- temp[-seq(1,D),(D+1):n]
   x.diff <- cbind(-A.mat,diag(n-D-length(union(exts,nas)))) %*% 
-    Q.mat %*% Lambda.mat %*% datareg[exists]
+    Q.mat %*% Lambda.mat %*% datareg[exists,]
   RQ.mat <- rbind(diag(n-length(union(exts,nas)))[1:D,,drop=FALSE],
                   cbind(-A.mat,diag(n-D-length(union(exts,nas))))) %*% Q.mat
   

@@ -1,4 +1,4 @@
-maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
+maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
 {
   # maxent.lik by Tucker McElroy
   #	Computes Gaussian likelihood for a SARMA model psi fitted to stationary data x
@@ -11,7 +11,7 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
   #	    the next component is the logged innovation variance
   #     the last components are for regression effects.
   #   s is the seasonal period
-  #   x is a matrix object,
+  #   x.diff is a matrix object,
   #     first column is "differenced data" defined via 
   #     B.mat %*% W = Delta %*% X in paper,
   #     subsequent columns (if any) are differenced regressors defined via
@@ -50,13 +50,13 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
     if (psi[k] == "NaN") psi[k] <- 0
   }
   
-  v <- x[,-1,drop=FALSE]
+  v <- x.diff[,-1,drop=FALSE]
   num.reg <- dim(v)[2]
   
   # input parameters defined, preliminary calculations	
-  r <- length(psi) - (1+num.reg)
+#  r <- length(psi) - (1+num.reg)
+  r <- p+q+ps+qs
   eta <- psi[-seq(1,r+1)]
-  #mu <- psi[r+2]
   if (p==0) { ar <- NULL } else { ar <- psi2phi(psi[1:p]) }
   if (q==0) { ma <- NULL } else { ma <- psi2phi(psi[(p+1):(p+q)]) }
   if (ps==0) { ars <- NULL } else { ars <- psi2phi(psi[(p+q+1):(p+q+ps)]) }	
@@ -78,7 +78,7 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
   Gamma.mat <- toeplitz(x.acf)
   lik.mat <- B.mat %*% Gamma.mat %*% t(B.mat)
   C.mat <- t(chol(lik.mat))
-  z <- solve(C.mat,x[,1,drop=FALSE]-v %*% eta)
+  z <- solve(C.mat,x.diff[,1,drop=FALSE]-v %*% eta)
   Q.form <- sum(z^2)
   logdet <- 2*sum(log(diag(C.mat)))
   lik <- Q.form/exp(psi[r+1]) + logdet + (dim(B.mat)[1])*psi[r+1]
@@ -88,7 +88,7 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
   # compute time series residuals
   sqrlik <- svd(lik.mat)
   sqrlik <- sqrlik$u %*% solve(diag(sqrt(sqrlik$d))) %*% t(sqrlik$u)
-  ts.resid <- sqrlik %*% (x[,1,drop=FALSE]-v %*% eta)
+  ts.resid <- sqrlik %*% (x.diff[,1,drop=FALSE]-v %*% eta)
   
   if (outFlag == 1) out <- lik
   if (outFlag == 2) out <- ts.resid
