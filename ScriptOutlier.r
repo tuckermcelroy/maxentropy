@@ -70,8 +70,8 @@ qs <- 0
 d <- 1
 ds <- 0
  
-datareg.ts <- ts(cbind(x,seq(1,n)),start=start(x),frequency=period)
-fit.mle <- maxent.fit(datareg.ts,ao,ls,p,q,ps,qs,d,ds)
+datareg <- ts(cbind(x,seq(1,n)),start=start(x),frequency=period)
+fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
 psi.mle <- fit.mle[[2]]$par
 ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
@@ -88,13 +88,13 @@ dev.off()
 
 # First do full shrinkage
 alpha <- 1
-out <- maxent.ev(datareg.ts,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
 1-pchisq(out[[5]],df=r)
 kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[5]])
 x.entropy <- out[[4]]
 
 ## get a figure
-pdf(file="MaxentFull.pdf",width=5,height=4)
+#pdf(file="MaxentFull.pdf",width=5,height=4)
 plot(x,ylim=c(-2,6),ylab="Claims",xlab="Year")
 lines(ts(x.entropy,frequency=period,start=c(2019,1)),col=4)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
@@ -102,13 +102,13 @@ dev.off()
 
 # Second do partial shrinkage
 alpha <- .99
-out <- maxent.ev(x,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
 1-pchisq(out[[5]],df=r)
 kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[5]])
 x.entropy <- out[[4]]
 
 ## get a figure
-pdf(file="MaxentHalf.pdf",width=5,height=4)
+#pdf(file="MaxentHalf.pdf",width=5,height=4)
 plot(x,ylim=c(-2,6),ylab="Claims",xlab="Year")
 lines(ts(x.entropy,frequency=period,start=c(2019,1)),col=4)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
@@ -159,8 +159,8 @@ qs <- 1
 d <- 2
 ds <- 1
 
-datareg.ts <- ts(cbind(data.ts,rep(1,n)),start=start(x),frequency=period)
-fit.mle <- maxent.fit(datareg.ts,ao,ls,p,q,ps,qs,d,ds)
+datareg <- ts(cbind(data.ts,rep(1,n)),start=start(x),frequency=period)
+fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
 psi.mle <- fit.mle[[2]]$par
 ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),

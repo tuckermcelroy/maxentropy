@@ -16,7 +16,17 @@ maxent.fit <- function(x,ao,ls,p,q,ps,qs,d,ds)
   #   qs: order of seasonal MA
   #   d: order of regular differencing (altogether)
   #   ds: order of seasonal aggregation
-  #
+  # Outputs:
+  #   param: contains the fitted parameters:
+  #	    first p components are the AR parameters 
+  #	    second q components are the MA parameters
+  #	    third ps components are the seasonal AR parameters
+  #	    fourth qs components are the seasonal MA parameters
+  #	    the next component is the logged innovation variance
+  #     the last components are for regression effects.
+  #   ent.mle: value of the divergence at mle
+  #   x.resid: residuals
+  # Requires: maxent.lik.r, maxent.prep.r
 
   psi2phi <- function(psi)
   {

@@ -22,7 +22,7 @@ maxent.lik <- function(psi,x,s,p,q,ps,qs,B.mat,outFlag)
   #	Outputs:
   #		value of the log likelihood excluding irrelevant constants (outFlag = 1)
   #		also yields time series residuals as alternative output (outFlag = 2)
-  #  Utilizes: polymult.r, ARMAauto.r
+  # Requires: polymult.r, ARMAauto.r
   
   psi2phi <- function(psi)
   {

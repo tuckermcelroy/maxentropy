@@ -21,6 +21,13 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #   alpha: controls shrinkage; 
   #     set to 1 for full shrinkage (use conditional expectation),
   #     set to 0 for no shrinkage (keep raw data)
+  # Outputs:
+  #   x.extreme: extreme-values from observed sample
+  #   x.adjust: adjusted extreme-values
+  #   x.regular: regular values from observed sample
+  #   x.entropy: entropified sample
+  #   wald: wald statistic for extreme values
+  # Requires: maxent.lik.r, maxent.prep.r
   
   n <- dim(x)[1]
   v <- x[,-1,drop=FALSE]
