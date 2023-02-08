@@ -1,4 +1,4 @@
-maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
+maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
 {
   # maxent.ev by Tucker McElroy
   #   Computes maximum entropy extreme-value adjustment.
@@ -6,7 +6,7 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #     and gives test statistic for its magnitude.
   #   Provides shrinkage of extremes, and returns entropified data.
   # Inputs:
-  #   x: time series matrix object with n rows, 
+  #   datareg: time series matrix object with n rows, 
   #     first column is data vector,
   #     subsequent columns (if any) are regressors 
   #   ao: vector of elements in {1,...,n} of AO times
@@ -29,12 +29,13 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #   wald: wald statistic for extreme values
   # Requires: maxent.lik.r, maxent.prep.r
   
-  n <- dim(x)[1]
-  v <- x[,-1,drop=FALSE]
+  n <- dim(datareg)[1]
+  v <- datareg[,-1,drop=FALSE]
   num.reg <- dim(v)[2]
-  r <- length(psi) - (1+num.reg)
+#  r <- length(psi) - (1+num.reg)
+  r <- p+q+ps+qs
   eta <- psi[-seq(1,r+1)]
-  s <- frequency(x)
+  s <- frequency(datareg)
   deltaS <- 1
   if(ds==1) deltaS <- rep(1,s)
   deltaT <- 1
@@ -43,29 +44,41 @@ maxent.ev <- function(x,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   delta <- polymult(deltaS,deltaT)
   D <- length(delta) - 1
   
+  nas <- NULL
+  for(k in 1:n) { nas <- union(nas,seq(1,n)[is.na(datareg[,1])]) }
+  nas <- sort(nas)
+  exists <- setdiff(seq(1,n),nas)
+  
   exts <- sort(union(ao,ls))
-  prep <- maxent.prep(x,ao,ls,d,ds)
+  prep <- maxent.prep(datareg,ao,ls,d,ds)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
   Gamma.mat <- maxent.lik(psi,x.diff,s,p,q,ps,qs,B.mat,3)
-  Gamma.alt <- diag(n)[,1:(n-length(exts)),drop=FALSE]
-  Gamma.alt[(D+1):n,(D+1):(n-length(exts))] <- Gamma.mat %*% t(B.mat) %*% 
-    solve(B.mat %*% Gamma.mat %*% t(B.mat))
-  x.extreme <- prep[[5]] %*% x[,1,drop=FALSE]
-  x.adjust <- prep[[5]] %*% (v %*% eta + prep[[3]] %*% Gamma.alt %*% 
-    prep[[4]] %*% prep[[6]] %*% (x[,1,drop=FALSE]-v %*% eta))
-  x.regular <- prep[[6]] %*% x[,1,drop=FALSE]
+  Gamma.alt <- diag(n)[,1:(n-length(union(exts,nas))),drop=FALSE]
+  Gamma.alt[(D+1):n,(D+1):(n-length(union(exts,nas)))] <- Gamma.mat %*% 
+    t(B.mat) %*% solve(B.mat %*% Gamma.mat %*% t(B.mat))
+  x.extreme <- prep[[5]] %*% datareg[exists,1,drop=FALSE]
+  x.proj <- (v %*% eta + prep[[3]] %*% Gamma.alt %*% prep[[4]] %*% 
+      prep[[6]] %*% (datareg[exists,1,drop=FALSE]-v[exists,,drop=FALSE] %*% eta))
+  x.adjust <- prep[[5]] %*% x.proj[exists,,drop=FALSE]
+  if(length(nas) > 0) { x.nas <- x.proj[nas,,drop=FALSE] } else { x.nas <- NULL }
+  x.regular <- prep[[6]] %*% datareg[exists,1,drop=FALSE]
   Gamma.mse <- matrix(0,n,n)
   Gamma.mse[(D+1):n,(D+1):n] <- Gamma.mat - Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat)) %*% B.mat %*% Gamma.mat
-  x.mse <- prep[[5]] %*% prep[[3]] %*% Gamma.mse %*% 
-    t(prep[[3]]) %*% t(prep[[5]])
+  x.mse <- prep[[5]] %*% prep[[3]][exists,,drop=FALSE] %*% Gamma.mse %*% 
+    t(prep[[3]][exists,,drop=FALSE]) %*% t(prep[[5]])
   
   wald <- t(x.extreme - x.adjust) %*% solve(x.mse) %*% (x.extreme - x.adjust)
   alpha <- max(alpha,1-pchisq(wald,df=r))
   kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/wald[1,1])
   x.shrink <- kappa*x.adjust + (1-kappa)*x.extreme
-  x.entropy <- solve(rbind(prep[[6]],prep[[5]]),c(x.regular,x.shrink)) 
   
-  return(list(x.extreme,x.adjust,x.regular,x.entropy,wald))
+  if(length(nas) > 0) { I.mat <- diag(n)[,nas,drop=FALSE] } else { I.mat <- NULL }
+  H.mat <- diag(n)[,exists,drop=FALSE]
+  Trans.mat <- rbind(t(I.mat),rbind(prep[[6]],prep[[5]]) %*% t(H.mat))
+  x.casted <- solve(Trans.mat,c(x.nas,x.regular,x.extreme))
+  x.entropy <- solve(Trans.mat,c(x.nas,x.regular,x.shrink)) 
+  
+  return(list(x.extreme,x.adjust,x.regular,x.nas,x.casted,x.entropy,wald))
 }
