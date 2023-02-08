@@ -58,11 +58,11 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   Gamma.alt[(D+1):n,(D+1):(n-length(union(exts,nas)))] <- Gamma.mat %*% 
     t(B.mat) %*% solve(B.mat %*% Gamma.mat %*% t(B.mat))
   x.extreme <- prep[[5]] %*% datareg[exists,1,drop=FALSE]
+  x.regular <- prep[[6]] %*% datareg[exists,1,drop=FALSE]
   x.proj <- (v %*% eta + prep[[3]] %*% Gamma.alt %*% prep[[4]] %*% 
       prep[[6]] %*% (datareg[exists,1,drop=FALSE]-v[exists,,drop=FALSE] %*% eta))
   x.adjust <- prep[[5]] %*% x.proj[exists,,drop=FALSE]
   if(length(nas) > 0) { x.nas <- x.proj[nas,,drop=FALSE] } else { x.nas <- NULL }
-  x.regular <- prep[[6]] %*% datareg[exists,1,drop=FALSE]
   Gamma.mse <- matrix(0,n,n)
   Gamma.mse[(D+1):n,(D+1):n] <- Gamma.mat - Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat)) %*% B.mat %*% Gamma.mat
@@ -76,7 +76,7 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   
   if(length(nas) > 0) { I.mat <- diag(n)[,nas,drop=FALSE] } else { I.mat <- NULL }
   H.mat <- diag(n)[,exists,drop=FALSE]
-  Trans.mat <- rbind(t(I.mat),rbind(prep[[6]],prep[[5]]) %*% t(H.mat))
+  Trans.mat <- t(cbind(I.mat,H.mat %*% t(rbind(prep[[6]],prep[[5]]))))
   x.casted <- solve(Trans.mat,c(x.nas,x.regular,x.extreme))
   x.entropy <- solve(Trans.mat,c(x.nas,x.regular,x.shrink)) 
   
