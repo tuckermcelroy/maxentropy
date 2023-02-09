@@ -71,9 +71,8 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   Gamma.mse <- matrix(0,n,n)
   Gamma.mse[(D+1):n,(D+1):n] <- Gamma.mat - Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat)) %*% B.mat %*% Gamma.mat
-  mse.entropy <- prep[[3]][exists,,drop=FALSE] %*% Gamma.mse %*% 
-    t(prep[[3]][exists,,drop=FALSE])
-  x.mse <- prep[[5]] %*% mse.entropy %*% t(prep[[5]])
+  mse.entropy <- prep[[3]] %*% Gamma.mse %*% t(prep[[3]])
+  x.mse <- prep[[5]] %*% mse.entropy[exists,exists,drop=FALSE] %*% t(prep[[5]])
   
   wald <- t(x.extreme - x.adjust) %*% solve(x.mse) %*% (x.extreme - x.adjust)
   alpha <- max(alpha,1-pchisq(wald,df=r))
