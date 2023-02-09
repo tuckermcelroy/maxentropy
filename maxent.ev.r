@@ -88,13 +88,13 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   mse.casted <- 0*diag(n)
   if(length(nas) > 0) 
   {
-    mse.casted[1:length(nas),1:length(nas),drop=FALSE] <- mse.entropy[nas,nas,drop=FALSE]
+    mse.casted[1:length(nas),1:length(nas)] <- mse.entropy[nas,nas,drop=FALSE]
     mse.casted <- Trans.inv %*% mse.casted %*% t(Trans.inv) 
   }
   mse.evadjust <- 0*diag(n)
   if(length(exts) > 0)
   {
-    mse.evadjust[(n-length(exts)+1):n,(n-length(exts)+1):n,drop=FALSE] <- x.mse
+    mse.evadjust[(n-length(exts)+1):n,(n-length(exts)+1):n] <- x.mse
     mse.evadjust <- Trans.inv %*% mse.evadjust %*% t(Trans.inv) 
   }
   
