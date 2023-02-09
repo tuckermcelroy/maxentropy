@@ -25,7 +25,12 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #   x.extreme: extreme-values from observed sample
   #   x.adjust: adjusted extreme-values
   #   x.regular: regular values from observed sample
-  #   x.entropy: entropified sample
+  #   x.nas: casted missing values
+  #   x.casted: sample corrected for missing values
+  #   x.entropy: sample corrected for extremes and missing values
+  #   mse.casted: MSE of sample corrected for missing values
+  #   mse.entropy: MSE of sample corrected for extremes and missing values
+  #   mse.evadjust: MSE of sample corrected for extremes
   #   wald: wald statistic for extreme values
   # Requires: maxent.lik.r, maxent.prep.r
   
@@ -66,8 +71,9 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   Gamma.mse <- matrix(0,n,n)
   Gamma.mse[(D+1):n,(D+1):n] <- Gamma.mat - Gamma.mat %*% t(B.mat) %*% 
     solve(B.mat %*% Gamma.mat %*% t(B.mat)) %*% B.mat %*% Gamma.mat
-  x.mse <- prep[[5]] %*% prep[[3]][exists,,drop=FALSE] %*% Gamma.mse %*% 
-    t(prep[[3]][exists,,drop=FALSE]) %*% t(prep[[5]])
+  mse.entropy <- prep[[3]][exists,,drop=FALSE] %*% Gamma.mse %*% 
+    t(prep[[3]][exists,,drop=FALSE])
+  x.mse <- prep[[5]] %*% mse.entropy %*% t(prep[[5]])
   
   wald <- t(x.extreme - x.adjust) %*% solve(x.mse) %*% (x.extreme - x.adjust)
   alpha <- max(alpha,1-pchisq(wald,df=r))
@@ -77,8 +83,22 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   if(length(nas) > 0) { I.mat <- diag(n)[,nas,drop=FALSE] } else { I.mat <- NULL }
   H.mat <- diag(n)[,exists,drop=FALSE]
   Trans.mat <- t(cbind(I.mat,H.mat %*% t(rbind(prep[[6]],prep[[5]]))))
-  x.casted <- solve(Trans.mat,c(x.nas,x.regular,x.extreme))
-  x.entropy <- solve(Trans.mat,c(x.nas,x.regular,x.shrink)) 
+  Trans.inv <- solve(Trans.mat)
+  x.casted <- Trans.inv %*% c(x.nas,x.regular,x.extreme)
+  x.entropy <- Trans.inv %*% c(x.nas,x.regular,x.shrink)
+  mse.casted <- 0*diag(n)
+  if(length(nas) > 0) 
+  {
+    mse.casted[1:length(nas),1:length(nas),drop=FALSE] <- mse.entropy[nas,nas,drop=FALSE]
+    mse.casted <- Trans.inv %*% mse.casted %*% t(Trans.inv) 
+  }
+  mse.evadjust <- 0*diag(n)
+  if(length(exts) > 0)
+  {
+    mse.evadjust[(n-length(exts)+1):n,(n-length(exts)+1):n,drop=FALSE] <- x.mse
+    mse.evadjust <- Trans.inv %*% mse.evadjust %*% t(Trans.inv) 
+  }
   
-  return(list(x.extreme,x.adjust,x.regular,x.nas,x.casted,x.entropy,wald))
+  return(list(x.extreme,x.adjust,x.regular,x.nas,x.casted,x.entropy,
+              mse.casted,mse.entropy,mse.evadjust,wald))
 }

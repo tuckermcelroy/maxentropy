@@ -13,6 +13,13 @@ source("maxent.fit.r")
 source("maxent.ev.r")
 source("hpsa.r")
 
+get_start <- function(x,lag)
+{
+  period <- frequency(x)
+  new <- time(x)[1] + lag/period
+  return(c(floor(new),1+period*(new-floor(new))))
+}
+
 #######################
 ## Load test data
 # Download: 6/11/2021 at 3:44 ET
@@ -87,37 +94,37 @@ dev.off()
 ## Obtain Shrinkage EV
 
 # Modify to get forecast and aftcast
-H <- 1
-x.ext <- c(rep(NA,H),x,rep(NA,H))
-datareg <- ts(cbind(x.ext,seq(1,n+2*H)),start=start(x),frequency=period)
-ao <- ao+H
-ls <- ls+H
+H <- 30
+x.ext <- ts(c(rep(NA,H),x,rep(NA,H)),start=get_start(x,-H),frequency=period)
+datareg <- ts(cbind(x.ext,seq(1,n+2*H)),start=start(x.ext),frequency=period)
+ao_mod <- ao+H
+ls_mod <- ls+H
 
 # First do full shrinkage
 alpha <- 1
-out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
-1-pchisq(out[[7]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[7]])
-x.entropy <- out[[6]]
+out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
+1-pchisq(out[[10]],df=r)
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[10]])
+x.entropy <- ts(out[[6]],frequency=period,start=start(x.ext))
 
 ## get a figure
 #pdf(file="MaxentFull.pdf",width=5,height=4)
-plot(x,ylim=c(-2,6),ylab="Claims",xlab="Year")
-lines(ts(x.entropy,frequency=period,start=c(2019,1)),col=4)
+plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
+lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
 dev.off() 
 
 # Second do partial shrinkage
 alpha <- .99
-out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
 1-pchisq(out[[7]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[7]])
-x.entropy <- out[[6]]
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[10]])
+x.entropy <- ts(out[[6]],frequency=period,start=start(x.ext))
 
 ## get a figure
 #pdf(file="MaxentHalf.pdf",width=5,height=4)
-plot(x,ylim=c(-2,6),ylab="Claims",xlab="Year")
-lines(ts(x.entropy,frequency=period,start=c(2019,1)),col=4)
+plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
+lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
 dev.off() 
   
