@@ -72,8 +72,8 @@ maxent.prep <- function(datareg,ao,ls,d,ds)
 #  Xtilde.inv <- t(pi.mat) %*% solve(cbind(K.mat,X.mat))
   Xtilde.inv <- solve(Xtilde.mat[exists,exists,drop=FALSE])
   
-#  t.hash <- t.star + sum(exts <= t.star + 1)
-  t.flat <- t.star + sum(union(exts,nas) <= t.star + 1)
+#  t.hash <- t.star - sum(exts <= t.star)
+  t.flat <- t.star - sum(union(exts,nas) <= t.star)
   q.perm <- seq(1,D)
 #  if(t.hash > 0) { q.perm <-  c(seq(D+1,D+t.hash),seq(1,D)) }
   if(t.flat > 0) { q.perm <-  c(seq(D+1,D+t.flat),seq(1,D)) }

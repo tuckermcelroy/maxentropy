@@ -86,12 +86,19 @@ dev.off()
 ######################
 ## Obtain Shrinkage EV
 
+# Modify to get forecast and aftcast
+H <- 1
+x.ext <- c(rep(NA,H),x,rep(NA,H))
+datareg <- ts(cbind(x.ext,seq(1,n+2*H)),start=start(x),frequency=period)
+ao <- ao+H
+ls <- ls+H
+
 # First do full shrinkage
 alpha <- 1
 out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
-1-pchisq(out[[5]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[5]])
-x.entropy <- out[[4]]
+1-pchisq(out[[7]],df=r)
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[7]])
+x.entropy <- out[[6]]
 
 ## get a figure
 #pdf(file="MaxentFull.pdf",width=5,height=4)
@@ -103,9 +110,9 @@ dev.off()
 # Second do partial shrinkage
 alpha <- .99
 out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
-1-pchisq(out[[5]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[5]])
-x.entropy <- out[[4]]
+1-pchisq(out[[7]],df=r)
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[7]])
+x.entropy <- out[[6]]
 
 ## get a figure
 #pdf(file="MaxentHalf.pdf",width=5,height=4)
