@@ -30,7 +30,6 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   #   x.entropy: sample corrected for extremes and missing values
   #   mse.casted: MSE of sample corrected for missing values
   #   mse.entropy: MSE of sample corrected for extremes and missing values
-  #   mse.evadjust: MSE of sample corrected for extremes
   #   wald: wald statistic for extreme values
   # Requires: maxent.lik.r, maxent.prep.r
   
@@ -91,13 +90,13 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
     mse.casted[1:length(nas),1:length(nas)] <- mse.entropy[nas,nas,drop=FALSE]
     mse.casted <- Trans.inv %*% mse.casted %*% t(Trans.inv) 
   }
-  mse.evadjust <- 0*diag(n)
-  if(length(exts) > 0)
-  {
-    mse.evadjust[(n-length(exts)+1):n,(n-length(exts)+1):n] <- x.mse
-    mse.evadjust <- Trans.inv %*% mse.evadjust %*% t(Trans.inv) 
-  }
+#  mse.evadjust <- 0*diag(n)
+#  if(length(exts) > 0)
+#  {
+#    mse.evadjust[(n-length(exts)+1):n,(n-length(exts)+1):n] <- x.mse
+#    mse.evadjust <- Trans.inv %*% mse.evadjust %*% t(Trans.inv) 
+#  }
   
   return(list(x.extreme,x.adjust,x.regular,x.nas,x.casted,x.entropy,
-              mse.casted,mse.entropy,mse.evadjust,wald))
+              mse.casted,mse.entropy,wald))
 }

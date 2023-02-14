@@ -11,6 +11,7 @@ source("maxent.prep.r")
 source("maxent.lik.r")
 source("maxent.fit.r")
 source("maxent.ev.r")
+source("maxent.plot.r")
 source("hpsa.r")
 
 get_start <- function(x,lag)
@@ -94,7 +95,7 @@ dev.off()
 ## Obtain Shrinkage EV
 
 # Modify to get forecast and aftcast
-H <- 30
+H <- 5
 x.ext <- ts(c(rep(NA,H),x,rep(NA,H)),start=get_start(x,-H),frequency=period)
 datareg <- ts(cbind(x.ext,seq(1,n+2*H)),start=start(x.ext),frequency=period)
 ao_mod <- ao+H
@@ -103,10 +104,13 @@ ls_mod <- ls+H
 # First do full shrinkage
 alpha <- 1
 out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
-1-pchisq(out[[10]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[10]])
-x.entropy <- ts(out[[6]],frequency=period,start=start(x.ext))
-
+x.casted <- ts(out[[5]],start=start(x.ext),frequency=period)
+mse.casted <- out[[7]]
+x.entropy <- ts(out[[6]],start=start(x.ext),frequency=period)
+mse.entropy <- out[[8]]
+1-pchisq(out[[9]],df=r)
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
+ 
 ## get a figure
 #pdf(file="MaxentFull.pdf",width=5,height=4)
 plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
@@ -117,9 +121,12 @@ dev.off()
 # Second do partial shrinkage
 alpha <- .99
 out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
-1-pchisq(out[[7]],df=r)
-kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[10]])
-x.entropy <- ts(out[[6]],frequency=period,start=start(x.ext))
+x.casted <- ts(out[[5]],start=start(x.ext),frequency=period)
+mse.casted <- out[[7]]
+x.entropy <- ts(out[[6]],start=start(x.ext),frequency=period)
+mse.entropy <- out[[8]]
+1-pchisq(out[[9]],df=r)
+kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
 
 ## get a figure
 #pdf(file="MaxentHalf.pdf",width=5,height=4)
