@@ -6,6 +6,9 @@ setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
 source("ARMAauto.r")
 source("polymult.r")
+source("polyLagMatrix.r")
+source("hend.r")
+source("x11Filter.r")
 source("maxent.reg.r")
 source("maxent.prep.r")
 source("maxent.lik.r")
@@ -135,6 +138,21 @@ lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
 dev.off() 
   
+#############################
+## Obtain Seasonal Adjustment
+
+p1 <- 3
+p2 <- 5
+Hendq <- 9
+x11f_seas <- x11filter(p1,p2,Hendq,s,1)
+x11f_sa <- x11filter(p1,p2,Hendq,s,2)
+n_seas <- n + 2*H + length(x11f_seas)-1
+n_sa <- n + 2*H + length(x11f_sa)-1
+#m <- (length(x11f)-1)/2
+psiMat_seas <- polyLagMatrix(x11f_seas,n_seas)[length(x11f_seas):n_seas,]
+psiMat_sa <- polyLagMatrix(x11f_sa,n_sa)[length(x11f_sa):n_sa,]
+
+
 #############################################
 ##  Monthly Retail and Manufacturing Analyses
 

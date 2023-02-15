@@ -51,5 +51,5 @@ x11filter <- function(p1,p2,q,per,comp)
 	if(comp == 3) { out <- omegaT } 
 	if(comp == 4) { out <- omegaI } 		
 	    
-	return(Re(out))	
+	return(out)
 }
