@@ -1,17 +1,22 @@
-maxent.plot <- function(x.ext,x.casted,x.entropy,mse.casted,mse.entropy,option=1)
+maxent.plot <- function(x.ext,x.est,mse.est,prop=0,option=1)
 {
   # maxent.plot by Tucker McElroy
   #   Plots maximum entropy extreme-value adjustment components.
   # Inputs:
   #   x.ext: data with original NAs, and extended with NAs fore and aft
-  #   x.casted: sample corrected for missing values
-  #   x.entropy: sample corrected for extremes and missing values
-  #   mse.casted: MSE of sample corrected for missing values
-  #   mse.entropy: MSE of sample corrected for extremes and missing values
+  #   x.est: modified x.ext, such as:
+  #     x.casted: sample corrected for missing values
+  #     x.entropy: sample corrected for extremes and missing values
+  #     x.sa: sample filtered to removed seasonality, and extremes added back
+  #   mse.est: MSE of x.est, such as:
+  #     mse.casted: MSE of sample corrected for missing values
+  #     mse.entropy: MSE of sample corrected for extremes and missing values
+  #     mse.sa: MSE of seasonal adjustment
+  #   prop: scaling proportion to y axis to help with visualizing 
   #   option: various plotting options
   #     1: plot x.ext alone
-  #     2: plot x.ext overlaid with x.casted with uncert bands
-  #     3: plot x.ext overlaid with x.entropy with uncert bands
+  #     2: plot x.ext overlaid with x.est with uncert bands
+  #     3: plot x.est alone with uncert bands
   
   period <- frequency(x)
   eps <- 10e-10
@@ -22,26 +27,26 @@ maxent.plot <- function(x.ext,x.casted,x.entropy,mse.casted,mse.entropy,option=1
   }
   if(option==2)
   {
-    x.casted_low <- x.casted - 2*sqrt(diag(mse.casted)+eps)
-    x.casted_hi <- x.casted + 2*sqrt(diag(mse.casted)+eps)
-    plot(x.casted,col=4,ylim=c(min(min(x.casted_low),min(x.ext,na.rm=TRUE)),
-                               max(max(x.casted_hi),max(x.ext,na.rm=TRUE))))
-    lines(x.ext)
-    polygon(c(time(x.casted),rev(time(x.casted))),
-            c(x.casted_low,rev(x.casted_hi)),
+    top.bound <- (1+sign(max(x.ext,na.rm=TRUE))*prop)*max(x.ext,na.rm=TRUE)
+    bot.bound <- (1-sign(min(x.ext,na.rm=TRUE))*prop)*min(x.ext,na.rm=TRUE)
+    x.est_low <- x.est - 2*sqrt(diag(mse.est)+eps)
+    x.est_hi <- x.est + 2*sqrt(diag(mse.est)+eps)
+    plot(x.est,col=4,ylim=c(bot.bound,top.bound))
+    lines(x.ext,lwd=2)
+    polygon(c(time(x.est),rev(time(x.est))),
+            c(pmax(bot.bound,x.est_low),rev(pmin(top.bound,x.est_hi))),
               col="#0000FF40",border=NA)
   }
   if(option==3)
   {
-    x.entropy_low <- x.entropy - 2*sqrt(diag(mse.entropy)+eps)
-    x.entropy_hi <- x.entropy + 2*sqrt(diag(mse.entropy)+eps)
-    plot(x.entropy,col=2,ylim=c(min(min(x.entropy_low),min(x.ext,na.rm=TRUE)),
-                                max(max(x.entropy_hi),max(x.ext,na.rm=TRUE))))
-    lines(x.ext)
-    polygon(c(time(x.entropy),rev(time(x.entropy))),
-            c(x.entropy_low,rev(x.entropy_hi)),
+    top.bound <- (1+sign(max(x.est,na.rm=TRUE))*prop)*max(x.est,na.rm=TRUE)
+    bot.bound <- (1-sign(min(x.est,na.rm=TRUE))*prop)*min(x.est,na.rm=TRUE)
+    x.est_low <- x.est - 2*sqrt(diag(mse.est)+eps)
+    x.est_hi <- x.est + 2*sqrt(diag(mse.est)+eps)
+    plot(x.est,col=2,ylim=c(bot.bound,top.bound))
+    polygon(c(time(x.est),rev(time(x.est))),
+            c(pmax(bot.bound,x.est_low),rev(pmin(top.bound,x.est_hi))),
             col="#FF000040",border=NA)
-    
   }
    
 }
