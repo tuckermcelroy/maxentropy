@@ -1,11 +1,16 @@
 ## Script for entropy outlier project
 
 library(seasonal)
+library(devtools)
+library(Rcpp)
+
+setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\sigex")
+load_all(".")
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
-source("ARMAauto.r")
-source("polymult.r")
+#source("ARMAauto.r")
+#source("polymult.r")
 #source("polyLagMatrix.r")
 source("hend.r")
 source("x11Filter.r")
@@ -189,8 +194,8 @@ data.ls[ls] <- x[ls]
 ## get a figure
 #pdf(file="FoodDrink_Plot.pdf",width=5, height=4)
 plot(x,ylab="Log Food and Drink",xlab="Year")  
-points(ts(data.ao,frequency=period,start=start(data.ts)),col=2)
-points(ts(data.ls,frequency=period,start=start(data.ts)),col=3)
+points(ts(data.ao,frequency=period,start=start(x)),col=2)
+points(ts(data.ls,frequency=period,start=start(x)),col=3)
 dev.off()
 
 ########################
@@ -208,7 +213,7 @@ fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
 psi.mle <- fit.mle[[2]]$par
 ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
-               frequency=period,start=start(data.ts))
+               frequency=period,start=start(x))
 plot(ts.resid)
 
 ## get a figure
@@ -345,5 +350,82 @@ bldg <- read.table("building.dat")
 period <- 12
 x <- ts(bldg,c(2001,1),frequency=period)
 n <- length(x)
+
+
+
+
+#############################################
+## Simulation Studies
+
+# Sim settings 
+monte <- 1000
+n <- 120
+t0 <- 60
+#t0 <- 108
+transform <- "none"
+aggregate <- FALSE
+subseries <- 1
+range <- NULL
+data.ts <- sigex.prep(matrix(1,nrow=n,ncol=1),
+                      transform,aggregate,subseries,range,TRUE)
+
+# Gaussian Airline
+period <- 12
+delta_air <- c(1,-1,rep(0,period-2),-1,1)
+p <- 0
+q <- 1
+ps <- 0
+qs <- 1
+d <- 2
+ds <- 1
+mdl <- NULL
+mdl <- sigex.add(mdl,seq(1,1),"sarma",c(p,q,ps,qs,period),NULL,"process",delta_air)
+mdl <- sigex.meaninit(mdl,data.ts,0)
+param <- matrix(c(.6,.6),ncol=2)
+zeta <- sigex.par2zeta(param,mdl[[2]][[1]])
+psi <- c(zeta,0,0)
+ma_poly <- polymult(c(1,-1*zeta[1]),c(1,rep(0,11),-1*zeta[2]))
+gamma <- ARMAauto(NULL,-1*ma_poly[-1],14) 
+
+# further settings
+burnin <- 60
+dof <- Inf
+init <- rep(0,period+1)
+beta_scale <- 10*sqrt(gamma[1])
+extreme <- FALSE
+ext.mat <- diag(n)
+levelshift <- TRUE
+beta <- beta_scale
+
+if(levelshift) { ao <- NULL; ls <- t0 } else { ao <- t0; ls <- NULL }
+r <- length(union(ao,ls))
+for(i in 1:monte)
+{
+  y <- sigex.sim(psi,mdl,n,burnin,dof,init)
+  if(extreme) beta <- rt(1,df=6)*beta_scale/sqrt(3/2)
+  if(levelshift) ext.mat[lower.tri(ext.mat)] <- 1
+  x <- y + beta*ext.mat[,t0]
+  plot.ts(x)
+  lines(y,col=2)
+  
+  if(extreme)  # do maxent 
+  {
+    
+    datareg <- ts(cbind(x,seq(1,n)^d),start=start(x),frequency=period)
+    fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
+    par.mle <- fit.mle[[1]]
+    psi.mle <- fit.mle[[2]]$par
+    ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
+                   frequency=period,start=start(x))
+    plot(ts.resid)
+    
+    
+  }
+  else # do regarima
+  {
+    
+  }
+  
+}
 
 
