@@ -58,8 +58,8 @@ maxent.fit <- function(datareg,ao,ls,p,q,ps,qs,d,ds)
 #  x <- datareg[,1]
   
   # fit the SARIMA model
-  r <- p+q+ps+qs
-  psi.init <- rep(0,r+1+num.reg)
+  rr <- p+q+ps+qs
+  psi.init <- rep(0,rr+1+num.reg)
   ent.mle <- nlminb(start=psi.init,objective=maxent.lik,x=x.diff,
                     s=s,p=p,q=q,ps=ps,qs=qs,B.mat=B.mat,outFlag=1)
   psi <- ent.mle$par
@@ -70,7 +70,7 @@ maxent.fit <- function(datareg,ao,ls,p,q,ps,qs,d,ds)
   if (q==0) { ma <- NULL } else { ma <- psi2phi(psi[(p+1):(p+q)]) }
   if (ps==0) { ars <- NULL } else { ars <- psi2phi(psi[(p+q+1):(p+q+ps)]) }	
   if (qs==0) { mas <- NULL } else { mas <- psi2phi(psi[(p+q+ps+1):(p+q+ps+qs)]) }
-  param <- c(ar,ma,ars,mas,exp(psi[r+1]),psi[-seq(1,r+1)])
+  param <- c(ar,ma,ars,mas,exp(psi[rr+1]),psi[-seq(1,rr+1)])
   
   x.resid <- ts(maxent.lik(psi,x.diff,s,p,q,ps,qs,B.mat,2),names="Residual",frequency=s)
   return(list(param,ent.mle,x.resid))

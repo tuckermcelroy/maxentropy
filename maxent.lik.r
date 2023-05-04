@@ -44,19 +44,13 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
     return(phi)
   }
   
-  # error control code
-  for(k in 1:length(psi))
-  {
-    if (psi[k] == "NaN") psi[k] <- 0
-  }
-  
   v <- x.diff[,-1,drop=FALSE]
   num.reg <- dim(v)[2]
   
   # input parameters defined, preliminary calculations	
 #  r <- length(psi) - (1+num.reg)
-  r <- p+q+ps+qs
-  eta <- psi[-seq(1,r+1)]
+  rr <- p+q+ps+qs
+  eta <- psi[-seq(1,rr+1)]
   if (p==0) { ar <- NULL } else { ar <- psi2phi(psi[1:p]) }
   if (q==0) { ma <- NULL } else { ma <- psi2phi(psi[(p+1):(p+q)]) }
   if (ps==0) { ars <- NULL } else { ars <- psi2phi(psi[(p+q+1):(p+q+ps)]) }	
@@ -81,7 +75,7 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
   z <- solve(C.mat,x.diff[,1,drop=FALSE]-v %*% eta)
   Q.form <- sum(z^2)
   logdet <- 2*sum(log(diag(C.mat)))
-  lik <- Q.form/exp(psi[r+1]) + logdet + (dim(B.mat)[1])*psi[r+1]
+  lik <- Q.form/exp(psi[rr+1]) + logdet + (dim(B.mat)[1])*psi[rr+1]
   
 #  print(lik)
    
@@ -93,7 +87,7 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
   if (outFlag == 1) out <- lik
   if (outFlag == 2) out <- ts.resid
   if (outFlag == 3) out <- Gamma.mat
-  if (outFlag == 4) out <- Q.form/exp(psi[r+1])
+  if (outFlag == 4) out <- Q.form/exp(psi[rr+1])
   
   return(out)
 }	

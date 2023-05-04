@@ -37,8 +37,8 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   v <- datareg[,-1,drop=FALSE]
   num.reg <- dim(v)[2]
 #  r <- length(psi) - (1+num.reg)
-  r <- p+q+ps+qs
-  eta <- psi[-seq(1,r+1)]
+  rr <- p+q+ps+qs
+  eta <- psi[-seq(1,rr+1)]
   s <- frequency(datareg)
   deltaS <- 1
   if(ds==1) deltaS <- rep(1,s)
@@ -54,6 +54,7 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   exists <- setdiff(seq(1,n),nas)
   
   exts <- sort(union(ao,ls))
+  r <- length(exts)
   prep <- maxent.prep(datareg,ao,ls,d,ds)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
