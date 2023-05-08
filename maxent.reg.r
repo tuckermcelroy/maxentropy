@@ -22,6 +22,6 @@ maxent.reg <- function(n,ao,ls)
     ls <- sort(ls)
     X.mat <- cbind(X.mat,ls.mat[,ls])
   }
-  X.mat <- as.matrix(X.mat[,order(union(ao,ls))])
+  X.mat <- as.matrix(X.mat)[,order(union(ao,ls)),drop=FALSE]
   return(X.mat)
 }

@@ -383,7 +383,7 @@ mdl <- sigex.add(mdl,seq(1,1),"sarma",c(p,q,ps,qs,period),NULL,"process",delta_a
 mdl <- sigex.meaninit(mdl,data.ts,0)
 param <- matrix(c(.6,.6),ncol=2)
 zeta <- sigex.par2zeta(param,mdl[[2]][[1]])
-psi <- c(zeta,0,0)
+psi <- c(0,zeta,0)
 ma_poly <- polymult(c(1,-1*zeta[1]),c(1,rep(0,11),-1*zeta[2]))
 gamma <- ARMAauto(NULL,-1*ma_poly[-1],14) 
 
@@ -396,16 +396,17 @@ extreme <- FALSE
 ext.mat <- diag(n)
 levelshift <- TRUE
 beta <- beta_scale
+alpha <- 1
 
 if(levelshift) { ao <- NULL; ls <- t0 } else { ao <- t0; ls <- NULL }
 r <- length(union(ao,ls))
 for(i in 1:monte)
 {
-  y <- sigex.sim(psi,mdl,n,burnin,dof,init)
+  y <- ts(sigex.sim(psi,mdl,n,burnin,dof,init),start=1,frequency=period)
   if(extreme) beta <- rt(1,df=6)*beta_scale/sqrt(3/2)
   if(levelshift) ext.mat[lower.tri(ext.mat)] <- 1
-  x <- y + beta*ext.mat[,t0]
-  plot.ts(x)
+  x <- ts(y + beta*ext.mat[,t0],start=1,frequency=period)
+  plot(x)
   lines(y,col=2)
   
   if(extreme)  # do maxent 
@@ -418,6 +419,16 @@ for(i in 1:monte)
     ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
                    frequency=period,start=start(x))
     plot(ts.resid)
+    acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
+    out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+#    x.casted <- ts(out[[5]],start=start(x),frequency=period)
+#    mse.casted <- out[[7]]
+#    x.entropy <- ts(out[[6]],start=start(x),frequency=period)
+#    mse.entropy <- out[[8]]
+     print(out[[9]])
+#    kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
+
+    maxent.plot(x,x.entropy,mse.entropy,prop=.05,2)
     
     
   }
