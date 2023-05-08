@@ -43,7 +43,11 @@ maxent.prep <- function(datareg,ao,ls,d,ds)
     t.star <- n+1
     while(t <= (n-D+1))
     {
-      if( (sum(X.mat[t:(t+D-1),]^2) == 0) && (sum(is.na(datareg[t:(t+D-1),1]))==0))
+      if(length(X.mat)==0) { noreg <- TRUE } else
+      {
+        if(sum(X.mat[t:(t+D-1),]^2) == 0) { noreg <- TRUE } else { noreg <- FALSE }
+      }
+      if(noreg && (sum(is.na(datareg[t:(t+D-1),1]))==0))
       { 
         t.star <- t-1 
         t <- n
@@ -65,26 +69,26 @@ maxent.prep <- function(datareg,ao,ls,d,ds)
   
   exts <- sort(union(ao,ls))
   regs <- setdiff(seq(1,n),exts)
-  J.mat <- diag(n)[,exts]
-  K.mat <- diag(n)[,regs]
+  if(length(exts)==0) { J.mat <- NULL } else { J.mat <- diag(n)[,exts,drop=FALSE] }
+  K.mat <- diag(n)[,regs,drop=FALSE]
   pi.mat <- t(cbind(K.mat,J.mat))
   Xtilde.mat <- cbind(K.mat,X.mat) %*% solve(t(pi.mat))
-#  Xtilde.inv <- t(pi.mat) %*% solve(cbind(K.mat,X.mat))
   Xtilde.inv <- solve(Xtilde.mat[exists,exists,drop=FALSE])
   
-#  t.hash <- t.star - sum(exts <= t.star)
-  t.flat <- t.star - sum(union(exts,nas) <= t.star)
+  if(length(union(exts,nas))==0) { t.flat <- t.star } else
+  {
+    t.flat <- t.star - sum(union(exts,nas) <= t.star)
+  }
   q.perm <- seq(1,D)
-#  if(t.hash > 0) { q.perm <-  c(seq(D+1,D+t.hash),seq(1,D)) }
   if(t.flat > 0) { q.perm <-  c(seq(D+1,D+t.flat),seq(1,D)) }
   Q.mat <- diag(n-length(union(exts,nas)))
-#  Q.mat[1:(D+t.hash),1:(D+t.hash)] <- diag(D+t.hash)[,q.perm]
   Q.mat[1:(D+t.flat),1:(D+t.flat)] <- diag(D+t.flat)[,q.perm]
   
-  Jtilde.mat <- diag(n)[exists,exts,drop=FALSE]
+  if(length(exts)==0) { Jtilde.mat <- NULL } else
+  {
+    Jtilde.mat <- diag(n)[exists,exts,drop=FALSE]
+  }
   Ktilde.mat <- diag(n)[exists,setdiff(seq(1,n),union(exts,nas))]
-#  Lambda.mat <- t(K.mat) %*% Xtilde.inv 
-#  Omega.mat <- t(J.mat) %*% Xtilde.inv 
   Lambda.mat <- t(Ktilde.mat) %*% Xtilde.inv 
   Omega.mat <- t(Jtilde.mat) %*% Xtilde.inv 
   temp <- Q.mat %*% Lambda.mat %*% Delta.inv[exists,,drop=FALSE]

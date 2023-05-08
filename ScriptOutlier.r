@@ -358,7 +358,7 @@ n <- length(x)
 ## Simulation Studies
 
 # Sim settings 
-monte <- 1000
+monte <- 500
 n <- 120
 t0 <- 60
 #t0 <- 108
@@ -409,33 +409,27 @@ for(i in 1:monte)
   plot(x)
   lines(y,col=2)
   
-  if(extreme)  # do maxent 
-  {
-    
-    datareg <- ts(cbind(x,seq(1,n)^d),start=start(x),frequency=period)
-    fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
-    par.mle <- fit.mle[[1]]
-    psi.mle <- fit.mle[[2]]$par
-    ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
-                   frequency=period,start=start(x))
-    plot(ts.resid)
-    acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
-    out <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
-#    x.casted <- ts(out[[5]],start=start(x),frequency=period)
-#    mse.casted <- out[[7]]
-#    x.entropy <- ts(out[[6]],start=start(x),frequency=period)
-#    mse.entropy <- out[[8]]
-     print(out[[9]])
-#    kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
+  # maxent estimation
+  datareg <- ts(cbind(x,seq(1,n)^d),start=start(x),frequency=period)
+  fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
+  par.mle <- fit.mle[[1]]
+  psi.mle <- fit.mle[[2]]$par
+#  ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
+#                   frequency=period,start=start(x))
+#  plot(ts.resid)
+#  acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
+  out.mle <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
+  out.true <- maxent.ev(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
+#  print(out.mle[[9]])
+#  print(out.true[[9]])
 
-    maxent.plot(x,x.entropy,mse.entropy,prop=.05,2)
-    
-    
-  }
-  else # do regarima
-  {
-    
-  }
+  # regarima estimation
+  X.mat <- maxent.reg(n,ao,ls)
+  datareg <- ts(cbind(cbind(x,seq(1,n)^d),X.mat),start=start(x),frequency=period)
+  fit.mle <- maxent.fit(datareg,NULL,NULL,p,q,ps,qs,d,ds)
+  par.mle <- fit.mle[[1]]
+  psi.mle <- fit.mle[[2]]$par
+  
   
 }
 

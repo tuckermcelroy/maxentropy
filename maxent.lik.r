@@ -48,7 +48,6 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
   num.reg <- dim(v)[2]
   
   # input parameters defined, preliminary calculations	
-#  r <- length(psi) - (1+num.reg)
   rr <- p+q+ps+qs
   eta <- psi[-seq(1,rr+1)]
   if (p==0) { ar <- NULL } else { ar <- psi2phi(psi[2:(p+1)]) }
@@ -86,7 +85,6 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
   
   
   if (outFlag == 1) out <- lik
-#  if (outFlag == 2) out <- ts.resid
   if (outFlag == 2) out <- z
   if (outFlag == 3) out <- Gamma.mat
   if (outFlag == 4) out <- Q.form/exp(psi[1])
