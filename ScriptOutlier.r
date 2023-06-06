@@ -126,7 +126,7 @@ ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
 plot(ts.resid)
 
 ## get a figure
-#pdf(file="AcfResid.pdf",width=5, height=4)
+#pdf(file="AcfResid-Claims.pdf",width=5, height=4)
 acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = period,main="Residual")
 dev.off()
 
@@ -153,14 +153,14 @@ kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
 ## get a figure
 #pdf(file="MaxentFull.pdf",width=5,height=4)
 #maxent.plot(x.ext,x.casted,mse.casted,option=2,top.bound=7,bot.bound=-3)
-maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=7,bot.bound=-3)
+maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 #plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
 #lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
 dev.off() 
 
 # Second do partial shrinkage
-alpha <- .99
+alpha <- .01
 out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
 x.casted <- ts(out[[5]],start=start(x.ext),frequency=period)
 mse.casted <- out[[7]]
@@ -172,7 +172,7 @@ kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
 ## get a figure
 #pdf(file="MaxentHalf.pdf",width=5,height=4)
 #maxent.plot(x.ext,x.casted,mse.casted,option=2,top.bound=7,bot.bound=-3)
-maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=7,bot.bound=-3)
+maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 #plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
 #lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
@@ -244,7 +244,7 @@ mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
 
 ## get a figure
 #pdf(file="ClaimsSA.pdf",width=5,height=4)
-maxent.plot(x.ext,x.sa,mse.sa,option=2,top.bound=7,bot.bound=-2)
+maxent.plot(x.ext,x.sa,mse.sa,option=2,top.bound=6,bot.bound=0)
 #maxent.plot(x.ext,x.seas,mse.seas,option=3,top.bound=5,bot.bound=-5)
 dev.off() 
 
@@ -262,8 +262,8 @@ dev.off()
 #Source: Monthly Retail Trade and Food Services	
 #722: Food Services and Drinking Places: U.S. Total	
 #Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]	
-#Period: 2001 to 2021
-#Data Extracted on: November 22, 2021 (10:32 pm)	
+#Period: 1992 to 2023
+#Data Extracted on: June 5, 2023 (4:57 pm)	
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -319,7 +319,7 @@ ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
 plot(ts.resid)
 
 ## get a figure
-#pdf(file="AcfResid.pdf",width=5, height=4)
+#pdf(file="AcfResid-Food.pdf",width=5, height=4)
 acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
 #spec.ar(ts.resid[-seq(1,r+d+ds*period)])
 dev.off()
@@ -360,14 +360,15 @@ mse.entropy <- out[[8]]
 kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
 
 ## get a figure
-#pdf(file="MaxentFull.pdf",width=5,height=4)
-maxent.plot(x.ext,x.casted,mse.casted,prop=.05,2)
+#pdf(file="Maxent-Food.pdf",width=5,height=4)
+#maxent.plot(x.ext,x.casted,mse.casted,prop=.05,2)
 maxent.plot(x.ext,x.entropy,mse.entropy,prop=.05,2)
 dev.off() 
 
 # Seasonally adjust
 x.evadjust <- x.casted - x.entropy
-x.sa <- psiMat_sa %*% x.entropy + x.evadjust[(H+1):(n_seas-H)]
+x.sa_evfree <- psiMat_sa %*% x.entropy 
+x.sa <- x.sa_evfree + x.evadjust[(H+1):(n_seas-H)]
 x.seas <- psiMat_seas %*% x.entropy 
 x.sa <- ts(x.sa,start=start(x),frequency=period)
 x.seas <- ts(x.seas,start=start(x),frequency=period)
@@ -376,15 +377,15 @@ mse.sa <- (psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
 mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*% 
   t(psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),])
 
-#setwd("C:\\Users\\neide\\OneDrive\\Documents\\Research\\MaxEntOutlier\\Figures")
-
 ## get a figure
 #pdf(file="FoodDrinkSA.pdf",width=5,height=4)
 maxent.plot(x.ext,x.sa,mse.sa,prop=.05,2)
-maxent.plot(x.ext,x.seas,mse.seas,prop=1,3)
+#maxent.plot(x.ext,x.seas,mse.seas,prop=1,3)
 dev.off() 
 
- 
+#spec.ar(x.sa_evfree)
+#acf(diff(x.sa_evfree),lag=100)
+
 
 
 #######################################################
