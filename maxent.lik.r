@@ -66,6 +66,8 @@ maxent.lik <- function(psi,x.diff,s,p,q,ps,qs,B.mat,outFlag)
   mapoly <- c(1,-1*mapoly)
   mapoly <- polymult(c(1,-1*ma),mapoly)
   
+#  print(psi)
+
   m <- dim(B.mat)[2]
   x.acf <- ARMAauto(ar = -1*Re(arpoly[-1]), ma = Re(mapoly[-1]),lag.max=m)[1:m]
   Gamma.mat <- toeplitz(x.acf)

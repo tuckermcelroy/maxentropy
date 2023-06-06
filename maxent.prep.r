@@ -84,13 +84,13 @@ maxent.prep <- function(datareg,ao,ls,d,ds)
   Q.mat <- diag(n-length(union(exts,nas)))
   Q.mat[1:(D+t.flat),1:(D+t.flat)] <- diag(D+t.flat)[,q.perm]
   
-  if(length(exts)==0) { Jtilde.mat <- NULL } else
+  if(length(exts)==0) { Jtilde.mat <- NULL; Omega.mat <- NULL } else
   {
     Jtilde.mat <- diag(n)[exists,exts,drop=FALSE]
+    Omega.mat <- t(Jtilde.mat) %*% Xtilde.inv 
   }
   Ktilde.mat <- diag(n)[exists,setdiff(seq(1,n),union(exts,nas))]
   Lambda.mat <- t(Ktilde.mat) %*% Xtilde.inv 
-  Omega.mat <- t(Jtilde.mat) %*% Xtilde.inv 
   temp <- Q.mat %*% Lambda.mat %*% Delta.inv[exists,,drop=FALSE]
   A.mat <- temp[-seq(1,D),1:D,drop=FALSE]
   B.mat <- temp[-seq(1,D),(D+1):n]

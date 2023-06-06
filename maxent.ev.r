@@ -59,6 +59,7 @@ maxent.ev <- function(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
   Gamma.mat <- maxent.lik(psi,x.diff,s,p,q,ps,qs,B.mat,3)
+  Gamma.mat <- exp(psi[1])*Gamma.mat
   Gamma.alt <- diag(n)[,1:(n-length(union(exts,nas))),drop=FALSE]
   Gamma.alt[(D+1):n,(D+1):(n-length(union(exts,nas)))] <- Gamma.mat %*% 
     t(B.mat) %*% solve(B.mat %*% Gamma.mat %*% t(B.mat))
