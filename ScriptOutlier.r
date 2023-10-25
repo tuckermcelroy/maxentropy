@@ -28,7 +28,7 @@ get_start <- function(x,lag)
 
 ubgenerator <- function(period,trunc.len,m)
 {
-  
+
   ceps2wold <- function(ceps,q)
   {
     m <- length(ceps)
@@ -42,30 +42,30 @@ ubgenerator <- function(period,trunc.len,m)
     }
     return(wolds)
   }
-  
+
   half.len <- floor(period/2)
   if(length(trunc.len)==0) { trunc.len <- half.len }
   ceps <- rep(0,m)
-  
+
   for(ell in 1:m)
   {
     ceps[ell] <- -2*sum(cos(2*pi*ell*seq(1,trunc.len)/period))/ell
   }
   wolds <- ceps2wold(ceps,2*trunc.len)
-  
+
   return(wolds)
 }
 
 #######################
 ## Load test data
-# Download: 5/18/2023 
- 
+# Download: 5/18/2023
+
 claims <- read.csv(file="C:\\Users\\neide\\OneDrive\\Documents\\Research\\MaxEntOutlier\\r539cy_new.csv",
                  header=TRUE,skip=1)
 weekspan <- claims[,1]
 claims <- claims[,2]
 #claims <- read.table("InitialClaims.dat")
-begin <- c(1967,1) 
+begin <- c(1967,1)
 #end <- c(2021,14)
 period <- 52
 claims <- ts(claims*10^(-6),frequency=period,start=begin)
@@ -80,7 +80,7 @@ dev.off()
 
 ## sub-window for 2019 to present
 dataNew.ts <- ts(claims[2714:2938],frequency=period,start=c(2019,1))
-plot(dataNew.ts,ylab="Claims",xlab="Year")  
+plot(dataNew.ts,ylab="Claims",xlab="Year")
 points(dataNew.ts)
 
 x <- dataNew.ts
@@ -89,11 +89,14 @@ n <- length(x)
 #####################
 ##  Identify outliers
 
-#ao <- c(65,66,67,68,69,70,71,72)
-#ao <- c(65,66,67,68,69,71,72)
-ao <- c(65,66,67,68,69,  71,72,81,82)
-#ls <- c(64,73)
-ls <- c(64,73,83)
+# partial specification
+#ao <- c(65,66,67,68,69,71,72,81,82)
+#ls <- c(64,73,83)
+
+# full specification
+ao <- seq(65,82)
+ls <- c(64,83)
+
 r <- length(union(ao,ls))
 data.ao <- rep(NA,n)
 data.ao[ao] <- x[ao]
@@ -102,7 +105,7 @@ data.ls[ls] <- x[ls]
 
 ## get a figure
 #pdf(file="Claims2019.pdf",width=5, height=4)
-plot(dataNew.ts,ylab="Claims",xlab="Year")  
+plot(dataNew.ts,ylab="Claims",xlab="Year")
 points(ts(data.ao,frequency=period,start=c(2019,1)),col=2)
 points(ts(data.ls,frequency=period,start=c(2019,1)),col=3)
 dev.off()
@@ -116,7 +119,7 @@ ps <- 1
 qs <- 0
 d <- 1
 ds <- 0
- 
+
 datareg <- ts(cbind(x,seq(1,n)),start=start(x),frequency=period)
 fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
 par.mle <- fit.mle[[1]]
@@ -149,7 +152,7 @@ x.entropy <- ts(out[[6]],start=start(x.ext),frequency=period)
 mse.entropy <- out[[8]]
 1-pchisq(out[[9]],df=r)
 kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
- 
+
 ## get a figure
 #pdf(file="MaxentFull.pdf",width=5,height=4)
 #maxent.plot(x.ext,x.casted,mse.casted,option=2,top.bound=7,bot.bound=-3)
@@ -157,10 +160,10 @@ maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 #plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
 #lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
-dev.off() 
+dev.off()
 
 # Second do partial shrinkage
-alpha <- .01
+alpha <- .0001
 out <- maxent.ev(datareg,ao_mod,ls_mod,psi.mle,p,q,ps,qs,d,ds,alpha)
 x.casted <- ts(out[[5]],start=start(x.ext),frequency=period)
 mse.casted <- out[[7]]
@@ -176,8 +179,8 @@ maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 #plot(x.entropy,ylim=c(-2,6),ylab="Claims",xlab="Year",col=4)
 #lines(x.ext,col=1)
 #points(ts(x - x.entropy,frequency=period,start=c(2019,1)),col=6)
-dev.off() 
-  
+dev.off()
+
 ##########################
 ## Get Seasonal Adjustment
 
@@ -216,7 +219,7 @@ for(i in 2:n)
   psiMat_seas <- rbind(c(psiMat_seas[1,-1],0),psiMat_seas)
   psiMat_sa <- rbind(c(psiMat_sa[1,-1],0),psiMat_sa)
 }
- 
+
 # Modify to get forecast and aftcast
 H <- shift
 x.ext <- ts(c(rep(NA,H),x,rep(NA,H)),start=get_start(x,-H),frequency=period)
@@ -232,21 +235,21 @@ mse.entropy <- out[[8]]
 
 # Seasonally adjust
 x.evadjust <- x.casted - x.entropy
-x.sa_evfree <- psiMat_sa %*% x.entropy 
+x.sa_evfree <- psiMat_sa %*% x.entropy
 x.sa <- x.sa_evfree + x.evadjust[(H+1):(n_seas-H)]
-x.seas <- psiMat_seas %*% x.entropy 
+x.seas <- psiMat_seas %*% x.entropy
 x.sa <- ts(x.sa,start=start(x),frequency=period)
 x.seas <- ts(x.seas,start=start(x),frequency=period)
-mse.sa <- (psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*% 
+mse.sa <- (psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
   t(psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),])
-mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*% 
+mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
   t(psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),])
 
 ## get a figure
 #pdf(file="ClaimsSA.pdf",width=5,height=4)
 maxent.plot(x.ext,x.sa,mse.sa,option=2,top.bound=6,bot.bound=0)
 #maxent.plot(x.ext,x.seas,mse.seas,option=3,top.bound=5,bot.bound=-5)
-dev.off() 
+dev.off()
 
 #spec.ar(x.sa_evfree)
 #acf(diff(x.sa_evfree),lag=100)
@@ -259,11 +262,11 @@ dev.off()
 ####################################
 # I: Retail Trade and Food Services
 
-#Source: Monthly Retail Trade and Food Services	
-#722: Food Services and Drinking Places: U.S. Total	
-#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]	
+#Source: Monthly Retail Trade and Food Services
+#722: Food Services and Drinking Places: U.S. Total
+#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]
 #Period: 1992 to 2023
-#Data Extracted on: June 5, 2023 (4:57 pm)	
+#Data Extracted on: June 5, 2023 (4:57 pm)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -283,10 +286,14 @@ n <- length(x)
 #####################
 ##  Identify outliers
 
-ao <- c(148, 149, 150, 151, 160, 161)
+# partial specification
+#ao <- c(148, 149, 150, 151, 160, 161)
+#ls <- c(147, 159)
+
+# full specification
+ao <- seq(148,158)
 ls <- c(147, 159)
-#ao <- c(seq(232,235),243,244,245)
-#ls <- c(231)
+
 r <- length(union(ao,ls))
 data.ao <- rep(NA,n)
 data.ao[ao] <- x[ao]
@@ -295,7 +302,7 @@ data.ls[ls] <- x[ls]
 
 ## get a figure
 #pdf(file="FoodDrink_Plot.pdf",width=5, height=4)
-plot(x,ylab="Log Food and Drink",xlab="Year")  
+plot(x,ylab="Log Food and Drink",xlab="Year")
 points(ts(data.ao,frequency=period,start=start(x)),col=2)
 points(ts(data.ls,frequency=period,start=start(x)),col=3)
 dev.off()
@@ -334,7 +341,7 @@ Hendq <- 9
 x11f_seas <- x11filter(p1,p2,Hendq,period,1)
 x11f_sa <- x11filter(p1,p2,Hendq,period,2)
 H <- (length(x11f_seas)-1)/2
-n_seas <- n + 2*H 
+n_seas <- n + 2*H
 psiMat_seas <- matrix(c(rep(0,n-1),x11f_seas),nrow=1)
 psiMat_sa <- matrix(c(rep(0,n-1),x11f_sa),nrow=1)
 for(i in 2:n)
@@ -363,25 +370,25 @@ kappa <- 1 - sqrt((qchisq(1-alpha,df=r))/out[[9]])
 #pdf(file="Maxent-Food.pdf",width=5,height=4)
 #maxent.plot(x.ext,x.casted,mse.casted,prop=.05,2)
 maxent.plot(x.ext,x.entropy,mse.entropy,prop=.05,2)
-dev.off() 
+dev.off()
 
 # Seasonally adjust
 x.evadjust <- x.casted - x.entropy
-x.sa_evfree <- psiMat_sa %*% x.entropy 
+x.sa_evfree <- psiMat_sa %*% x.entropy
 x.sa <- x.sa_evfree + x.evadjust[(H+1):(n_seas-H)]
-x.seas <- psiMat_seas %*% x.entropy 
+x.seas <- psiMat_seas %*% x.entropy
 x.sa <- ts(x.sa,start=start(x),frequency=period)
 x.seas <- ts(x.seas,start=start(x),frequency=period)
-mse.sa <- (psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*% 
+mse.sa <- (psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
   t(psiMat_sa - diag(n_seas)[(H+1):(n_seas-H),])
-mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*% 
+mse.seas <- (psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),]) %*% mse.entropy %*%
   t(psiMat_seas - diag(n_seas)[(H+1):(n_seas-H),])
 
 ## get a figure
 #pdf(file="FoodDrinkSA.pdf",width=5,height=4)
 maxent.plot(x.ext,x.sa,mse.sa,prop=.05,2)
 #maxent.plot(x.ext,x.seas,mse.seas,prop=1,3)
-dev.off() 
+dev.off()
 
 #spec.ar(x.sa_evfree)
 #acf(diff(x.sa_evfree),lag=100)
@@ -391,11 +398,11 @@ dev.off()
 #######################################################
 # II: Manufacturers' Orders, Shipments, and Inventories
 
-#Source: Manufacturers' Shipments, Inventories, and Orders	
-#Total Manufacturing: U.S. Total	
-#Not Seasonally Adjusted Value of Shipments [Millions of Dollars]	
+#Source: Manufacturers' Shipments, Inventories, and Orders
+#Total Manufacturing: U.S. Total
+#Not Seasonally Adjusted Value of Shipments [Millions of Dollars]
 #Period: 2001 to 2021
-#Data Extracted on: November 16, 2021 (10:27 am)	
+#Data Extracted on: November 16, 2021 (10:27 am)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -409,11 +416,11 @@ n <- length(x)
 #####################
 # III: Grocery Stores
 
-#Source: Monthly Retail Trade and Food Services	
-#4451: Grocery Stores: U.S. Total	
-#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]	
+#Source: Monthly Retail Trade and Food Services
+#4451: Grocery Stores: U.S. Total
+#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]
 #Period: 1992 to 2021
-#Data Extracted on: November 22, 2021 (10:35 pm)	
+#Data Extracted on: November 22, 2021 (10:35 pm)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -425,11 +432,11 @@ n <- length(x)
 ###################
 # IV: Durable Goods
 
-# Source: Manufacturers' Shipments, Inventories, and Orders	
+# Source: Manufacturers' Shipments, Inventories, and Orders
 # Durable Goods: U.S. Total
-##Not Seasonally Adjusted Value of Shipments [Millions of Dollars]	
+##Not Seasonally Adjusted Value of Shipments [Millions of Dollars]
 #Period: 2001 to 2021
-#Data Extracted on: November 22, 2021 (10:27 pm)	
+#Data Extracted on: November 22, 2021 (10:27 pm)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -441,11 +448,11 @@ n <- length(x)
 ############################################
 # V: Building Materials and Garden Equipment
 
-#Source: Monthly Retail Trade and Food Services	
+#Source: Monthly Retail Trade and Food Services
 #444: Building Mat. and Garden Equip. and Supplies Dealers: U.S. Total
-#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]	
+#Not Seasonally Adjusted Sales - Monthly [Millions of Dollars]
 #Period: 2001 to 2021
-#Data Extracted on: November 22, 2021 (11:13 pm)	
+#Data Extracted on: November 22, 2021 (11:13 pm)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\GitHub\\maxentropy")
 
@@ -462,7 +469,7 @@ n <- length(x)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\Research\\MaxEntOutlier\\Numerical")
 
-# Sim settings 
+# Sim settings
 monte <- 1000
 n <- 120
 #t0 <- 60
@@ -490,7 +497,7 @@ param <- matrix(c(.6,.6),ncol=2)
 zeta <- sigex.par2zeta(param,mdl[[2]][[1]])
 psi <- c(0,zeta,0)
 ma_poly <- polymult(c(1,-1*zeta[1]),c(1,rep(0,11),-1*zeta[2]))
-gamma <- ARMAauto(NULL,-1*ma_poly[-1],14) 
+gamma <- ARMAauto(NULL,-1*ma_poly[-1],14)
 
 # get differencing polynomial
 deltaS <- 1
@@ -500,7 +507,7 @@ if(d==1) deltaT <- c(1,-1)
 if(d==2) deltaT <- c(1,-2,1)
 delta <- polymult(deltaS,deltaT)
 D <- length(delta) - 1
- 
+
 # further settings
 burnin <- 60
 dof <- Inf
@@ -523,7 +530,7 @@ for(i in 1:monte)
   x <- ts(y + beta*ext.mat[,t0],start=1,frequency=period)
   plot(x)
   lines(y,col=2)
-  
+
   # maxent estimation
   datareg <- ts(cbind(x,seq(1,n)^d),start=start(x),frequency=period)
   fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
@@ -554,13 +561,13 @@ for(i in 1:monte)
   Gamma.true <- maxent.lik(c(psi,beta),x.diff,period,p,q,ps,qs,B.mat,3)
   # Gamma.true does not depend on the random beta, but we need to put
   #  some vector of length beta in the call...
-  
+
   fstat.mle <- exp(-1*psi.mle[1])*t(beta.reg) %*% t(Xdiff.mat) %*% solve(Gamma.mle) %*% Xdiff.mat %*% beta.reg
   fstat.true <- exp(-1*psi[1])*t(beta.reg) %*% t(Xdiff.mat) %*% solve(Gamma.true) %*% Xdiff.mat %*% beta.reg
   stat <- c(stat,fstat.mle,fstat.true)
- 
+
   stats <- rbind(stats,stat)
-  print(i) 
+  print(i)
 }
 
 sum(stats[,1] >= qchisq(.95,df=1))/monte
