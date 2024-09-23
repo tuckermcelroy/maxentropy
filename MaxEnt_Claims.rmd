@@ -1,0 +1,70 @@
+---
+title: "Maximum Entropy: Claims Vignette"
+author: "Tucker McElroy"
+date: '2024-09-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Claims
+
+We examine the "National Unemployment Insurance Weekly Claims" data from the
+[Department of Labor](https://oui.doleta.gov/unemploy/claims.asp), referred to
+as *claims* for short. The data covers a span from January 7, 1967 through 
+April 22, 2023.  
+  
+## Load Code
+
+Load up the libraries needed.
+
+```{r}
+library(seasonal)
+library(devtools)
+library(Rcpp)
+```
+
+Load up code from Maximum Entropy repository.
+
+```{r}
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/ARMAauto.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/hend.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/x11Filter.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.reg.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.prep.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.lik.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.fit.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.ev.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.plot.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/hpsa.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/ubgenerator.r")
+```
+
+Load an additional function.
+
+```{r}
+get_start <- function(x,lag)
+{
+  period <- frequency(x)
+  new <- time(x)[1] + lag/period
+  return(c(floor(new),1+period*(new-floor(new))))
+}
+```
+
+## Load Data
+
+The data was downloaded on May 18, 2023. We load it from the repo, and plot.
+ 
+```{r}
+claims <- read.csv(url("https://github.com/tuckermcelroy/maxentropy/blob/main/r539cy_new.csv"),
+                 header=TRUE,skip=1)
+weekspan <- claims[,1]
+claims <- claims[,2]
+begin <- c(1967,1)
+period <- 52
+claims <- ts(claims*10^(-6),frequency=period,start=begin)
+plot(claims)
+plot(log(claims),ylab="Log Claims",xlab="Year")
+```

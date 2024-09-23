@@ -469,11 +469,9 @@ n <- length(x)
 
 setwd("C:\\Users\\neide\\OneDrive\\Documents\\Research\\MaxEntOutlier\\Numerical")
 
-# Sim settings
+### Sim settings
 monte <- 1000
 n <- 120
-#t0 <- 60
-t0 <- 108
 transform <- "none"
 aggregate <- FALSE
 subseries <- 1
@@ -481,7 +479,12 @@ range <- NULL
 data.ts <- sigex.prep(matrix(1,nrow=n,ncol=1),
                       transform,aggregate,subseries,range,TRUE)
 
-# Gaussian Airline
+### Outlier Timing: Set t0 to 60 or 108
+#t0 <- 60
+t0 <- 108
+t1 <- 72
+
+### Gaussian Airline
 period <- 12
 delta_air <- c(1,-1,rep(0,period-2),-1,1)
 p <- 0
@@ -499,25 +502,43 @@ psi <- c(0,zeta,0)
 ma_poly <- polymult(c(1,-1*zeta[1]),c(1,rep(0,11),-1*zeta[2]))
 gamma <- ARMAauto(NULL,-1*ma_poly[-1],14)
 
-# get differencing polynomial
+### get differencing polynomial
 deltaS <- 1
-if(ds==1) deltaS <- rep(1,s)
+if(ds==1) deltaS <- rep(1,period)
 deltaT <- 1
 if(d==1) deltaT <- c(1,-1)
 if(d==2) deltaT <- c(1,-2,1)
 delta <- polymult(deltaS,deltaT)
 D <- length(delta) - 1
 
-# further settings
+### Outlier Scaling: Set v = 0, 1, 2, or 3 for stochastic outlier,
+###   v = 0, .25, .5, or 1 for deterministic outlier.
+###   Set u = 3 for stochastic outlier, u = 1 for deterministic outlier
+v <- 3
+u <- 3
+beta_scale <- v*sqrt(gamma[1])
+nu_scale <- u*sqrt(gamma[1])
+
+### further settings
 burnin <- 60
 dof <- Inf
 init <- rep(0,period+1)
-beta_scale <- 3*sqrt(gamma[1])
-extreme <- TRUE
 ext.mat <- diag(n)
-levelshift <- TRUE
 beta <- beta_scale
+nu <- nu_scale
 alpha <- 1
+
+### Set extreme = TRUE for stochastic outlier, extreme = FALSE for deterministic outlier
+extreme <- TRUE
+#extreme <- FALSE
+
+### Set levelshift = TRUE for LS, levelshift = FALSE for AO
+levelshift <- TRUE
+#levelshift <- FALSE
+
+### Set misspec = TRUE to add an AO at time 72, else misspec = FALSE
+misspec <- TRUE
+#misspec <- FALSE
 
 if(levelshift) { ao <- NULL; ls <- t0 } else { ao <- t0; ls <- NULL }
 r <- length(union(ao,ls))
@@ -525,6 +546,8 @@ stats <- NULL
 for(i in 1:monte)
 {
   y <- ts(sigex.sim(psi,mdl,n,burnin,dof,init),start=1,frequency=period)
+  if(extreme) nu <- rt(1,df=6)*nu_scale/sqrt(3/2)
+  if(misspec) y <- y + nu*ext.mat[,t1]
   if(extreme) beta <- rt(1,df=6)*beta_scale/sqrt(3/2)
   if(levelshift) ext.mat[lower.tri(ext.mat)] <- 1
   x <- ts(y + beta*ext.mat[,t0],start=1,frequency=period)
@@ -536,14 +559,8 @@ for(i in 1:monte)
   fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
   par.mle <- fit.mle[[1]]
   psi.mle <- fit.mle[[2]]$par
-#  ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
-#                   frequency=period,start=start(x))
-#  plot(ts.resid)
-#  acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
   out.mle <- maxent.ev(datareg,ao,ls,psi.mle,p,q,ps,qs,d,ds,alpha)
   out.true <- maxent.ev(datareg,ao,ls,psi,p,q,ps,qs,d,ds,alpha)
-#  print(out.mle[[9]])
-#  print(out.true[[9]])
   stat <- c(out.mle[[9]],out.true[[9]])
 
   # regarima estimation
@@ -558,16 +575,16 @@ for(i in 1:monte)
   x.diff <- prep[[1]]
   B.mat <- prep[[2]]
   Gamma.mle <- maxent.lik(psi.mle,x.diff,period,p,q,ps,qs,B.mat,3)
-  Gamma.true <- maxent.lik(c(psi,beta),x.diff,period,p,q,ps,qs,B.mat,3)
   # Gamma.true does not depend on the random beta, but we need to put
   #  some vector of length beta in the call...
+  Gamma.true <- maxent.lik(c(psi,beta),x.diff,period,p,q,ps,qs,B.mat,3)
 
   fstat.mle <- exp(-1*psi.mle[1])*t(beta.reg) %*% t(Xdiff.mat) %*% solve(Gamma.mle) %*% Xdiff.mat %*% beta.reg
   fstat.true <- exp(-1*psi[1])*t(beta.reg) %*% t(Xdiff.mat) %*% solve(Gamma.true) %*% Xdiff.mat %*% beta.reg
   stat <- c(stat,fstat.mle,fstat.true)
 
   stats <- rbind(stats,stat)
-  print(i)
+  if(i %% 100 == 0) print(i)
 }
 
 sum(stats[,1] >= qchisq(.95,df=1))/monte
@@ -576,12 +593,12 @@ sum(stats[,3] >= qchisq(.95,df=1))/monte
 sum(stats[,4] >= qchisq(.95,df=1))/monte
 
 # write output
-#write(t(stats),file="stats_ao_fixed_middle_scale050.txt",ncol=4)
-#write(t(stats),file="stats_ls_fixed_middle_scale1.txt",ncol=4)
-#write(t(stats),file="stats_ao_random_middle_scale3.txt",ncol=4)
-#write(t(stats),file="stats_ls_random_middle_scale3.txt",ncol=4)
-#write(t(stats),file="stats_ao_fixed_end_scale1.txt",ncol=4)
-#write(t(stats),file="stats_ls_fixed_end_scale1.txt",ncol=4)
-#write(t(stats),file="stats_ao_random_end_scale3.txt",ncol=4)
-#write(t(stats),file="stats_ls_random_end_scale3.txt",ncol=4)
+#write(t(stats),file="statsM_ao_fixed_middle_scale1.txt",ncol=4)
+#write(t(stats),file="statsM_ls_fixed_middle_scale1.txt",ncol=4)
+#write(t(stats),file="statsM_ao_random_middle_scale3.txt",ncol=4)
+#write(t(stats),file="statsM_ls_random_middle_scale3.txt",ncol=4)
+#write(t(stats),file="statsM_ao_fixed_end_scale1.txt",ncol=4)
+#write(t(stats),file="statsM_ls_fixed_end_scale0.txt",ncol=4)
+#write(t(stats),file="statsM_ao_random_end_scale3.txt",ncol=4)
+#write(t(stats),file="statsM_ls_random_end_scale3.txt",ncol=4)
 
