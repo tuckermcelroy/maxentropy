@@ -14,7 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 We examine the "National Unemployment Insurance Weekly Claims" data from the
 [Department of Labor](https://oui.doleta.gov/unemploy/claims.asp), referred to
 as *claims* for short. The data covers a span from January 7, 1967 through 
-April 22, 2023.  
+April 22, 2023. We apply R functions that implement the methodology described
+in *Analysis of Crisis Effects via Maximum Entropy Adjustment*.
   
 ## Load Code
 
@@ -29,9 +30,10 @@ library(Rcpp)
 Load up code from Maximum Entropy repository.
 
 ```{r}
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/polymult.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/ARMAauto.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/hend.r")
-source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/x11Filter.r")
+source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/x11filter.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.reg.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.prep.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/maxent.lik.r")
@@ -58,13 +60,96 @@ get_start <- function(x,lag)
 The data was downloaded on May 18, 2023. We load it from the repo, and plot.
  
 ```{r}
-claims <- read.csv(url("https://github.com/tuckermcelroy/maxentropy/blob/main/r539cy_new.csv"),
-                 header=TRUE,skip=1)
-weekspan <- claims[,1]
-claims <- claims[,2]
+claims <- read.table(url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/refs/heads/main/Claims.dat"))
 begin <- c(1967,1)
 period <- 52
-claims <- ts(claims*10^(-6),frequency=period,start=begin)
+claims <- ts(claims,frequency=period,start=begin)
 plot(claims)
+```
+
+Graph the logged data.
+
+```{r}
 plot(log(claims),ylab="Log Claims",xlab="Year")
+```
+
+We focus on a sub-window from 2019 onwards, in original scale.
+
+```{r}
+dataNew.ts <- ts(claims[2714:2938],frequency=period,start=c(2019,1))
+plot(dataNew.ts,ylab="Claims",xlab="Year")
+points(dataNew.ts)
+```
+
+Set up variables for analysis.
+
+```{r}
+x <- dataNew.ts
+n <- length(x)
+```
+
+## Outlier Specification
+
+We begin with a liberal specification of outliers, based upon exploratory
+analysis. We call this the *full specification*. The variables *ao* and *ls*
+provide the indices $t_0$ for the outlier start times.
+
+```{r}
+ao <- seq(65,82)
+ls <- c(64,83)
+r <- length(union(ao,ls))
+```
+
+Generate another plot, where the AO effects are in red, and the start dates of
+the LS effects are in green.
+
+```{r}
+data.ao <- rep(NA,n)
+data.ao[ao] <- x[ao]
+data.ls <- rep(NA,n)
+data.ls[ls] <- x[ls]
+plot(dataNew.ts,ylab="Claims",xlab="Year")
+points(ts(data.ao,frequency=period,start=c(2019,1)),col=2)
+points(ts(data.ls,frequency=period,start=c(2019,1)),col=3)
+```
+
+## Specify and Fit Time Series Model
+
+We specify a SARIMA model of period 52. Variables $p$ and $q$ are the 
+autoregressive order and moving average order, and $d$ is the total number of
+regular differences. Variables $ps$ and $qs$ are the orders of the seasonal
+autoregressive and seasonal moving average polynomials, and $ds$ is the order of
+seasonal aggregation.
+
+```{r}
+p <- 4
+q <- 3
+ps <- 1
+qs <- 0
+d <- 1
+ds <- 0
+```
+
+For the maximum entropy code, we need to introduce the polynomial trend regressor,
+which is given by $t^d$ for $t=1,2,...,n$. The function *maxent.fit* will fit
+the specified SARIMA model to the data. This relies on the function *maxent.lik* 
+to compute the log Gaussian likelihood, and *maxent.prep* to compute various 
+matrices described in the paper.
+
+```{r}
+datareg <- ts(cbind(x,seq(1,n)^d),start=start(x),frequency=period)
+fit.mle <- maxent.fit(datareg,ao,ls,p,q,ps,qs,d,ds)
+par.mle <- fit.mle[[1]]
+psi.mle <- fit.mle[[2]]$par
+print(par.mle)
+```
+
+The parameters correspond to autoregressive, moving average, seasonal autoregressive,
+and seasonal moving average polynomial coefficients, all written in minus 
+convention. 
+
+```{r}
+ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
+               frequency=period,start=start(x))
+plot(ts.resid)
 ```
