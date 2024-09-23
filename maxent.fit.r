@@ -18,7 +18,7 @@ maxent.fit <- function(datareg,ao,ls,p,q,ps,qs,d,ds)
   #   ds: order of seasonal aggregation
   # Outputs:
   #   param: contains the fitted parameters:
-  #	    the initial component is the logged innovation variance; after this --
+  #	    the initial component is the innovation variance; after this --
   #	    first p components are the AR parameters 
   #	    second q components are the MA parameters
   #	    third ps components are the seasonal AR parameters
