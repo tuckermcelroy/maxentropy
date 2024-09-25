@@ -6,22 +6,22 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 # Claims
 
 We examine the "National Unemployment Insurance Weekly Claims" data from the
 [Department of Labor](https://oui.doleta.gov/unemploy/claims.asp), referred to
-as *claims* for short. The data covers a span from January 7, 1967 through 
+as *Claims* for short. The data covers a span from January 7, 1967 through 
 April 22, 2023. We apply R functions that implement the methodology described
-in *Analysis of Crisis Effects via Maximum Entropy Adjustment*.
+in the paper *Analysis of Crisis Effects via Maximum Entropy Adjustment*.
   
 ## Load Code
 
 Load up the libraries needed.
 
-```{r,echo=FALSE}
+```{r}
 library(seasonal,warn.conflicts=FALSE)
 library(devtools,warn.conflicts=FALSE)
 library(Rcpp,warn.conflicts=FALSE)
@@ -29,7 +29,7 @@ library(Rcpp,warn.conflicts=FALSE)
 
 Load up code from Maximum Entropy repository.
 
-```{r,echo=FALSE}
+```{r}
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/polymult.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/ARMAauto.r")
 source_url("https://raw.githubusercontent.com/tuckermcelroy/maxentropy/main/hend.r")
@@ -156,7 +156,9 @@ ts.resid <- ts(c(rep(NA,r+d+ds*period),fit.mle[[3]]),
 plot(ts.resid)
 ```
 
-We can check the residuals for autocorrelation.
+We can check the residuals for autocorrelation. The model is not perfect, but 
+is sufficient for the purposes of extreme-value adjustment and seasonal
+adjustment.
 
 ```{r}
 acf(ts.resid[-seq(1,r+d+ds*period)],lag.max = 4*period,main="Residual")
@@ -186,7 +188,7 @@ points(ts(data.ao,frequency=period,start=c(2019,1)),col=2)
 points(ts(data.ls,frequency=period,start=c(2019,1)),col=3)
 ```
 
-We keep the time series model the same, and refit.
+We keep the time series model the same, and refit. The parameters change slightly.
 
 ```{r}
 fit.mle.new <- maxent.fit(datareg,ao.new,ls.new,p,q,ps,qs,d,ds)
@@ -203,7 +205,8 @@ ts.resid.new <- ts(c(rep(NA,r.new+d+ds*period),fit.mle.new[[3]]),
 plot(ts.resid.new)
 ```
 
-We can check the residuals for autocorrelation.
+We can check the residuals for autocorrelation. Like the full specification, this
+partial specification also has some residual autocorrelation.
 
 ```{r}
 acf(ts.resid.new[-seq(1,r.new+d+ds*period)],lag.max = 4*period,main="Residual")
@@ -285,7 +288,8 @@ mse.entropy <- out[[8]]
 Finally, we compute the test statistic $\widehat{\mathcal{E}}$ from the paper,
 for whether the specified outlier effects are present: the value is
 `r out[[9]]*10^{-3}` in thousands, with chi-square critical value
-`r qchisq(df=r,.95)`. The maximum entropy adjustment with full shrinkage is 
+`r qchisq(df=r,.95)`. This is a clear rejection, indicating that some of the
+specified outliers are indeed present. The maximum entropy adjustment with full shrinkage is 
 plotted along with the shaded uncertainty, using our function *maxent.plot*. 
 
 ```{r}
