@@ -304,6 +304,56 @@ mse.entropy <- out[[8]]
 maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 ```
 
+## Alternative Results from RegARIMA
+
+We can also get an extreme-value adjustment from the RegARIMA approach, because
+there are no missing values. However, we must refit the model because now there
+are additional model parameters corresponding to the outlier effects. First,
+we construct the full regression matrix (together with the trend polynomial)
+using the function *maxent.reg*.
+
+```{r}
+X.mat <- maxent.reg(n,ao,ls)
+datareg <- ts(cbind(cbind(x,seq(1,n)^d),X.mat),start=start(x),frequency=period)
+```
+
+Then we fit the time series; the time series model specification is the same.
+
+```{r}
+fit.mle.reg <- maxent.fit(datareg,NULL,NULL,p,q,ps,qs,d,ds)
+par.mle.reg <- fit.mle.reg[[1]]
+psi.mle.reg <- fit.mle.reg[[2]]$par
+print(par.mle.reg)
+```
+Comparing the first 9 parameter values to those of *par.mle*, we see there are 
+some differences, and the innovation variance `r par.mle.reg[1]` is smaller than
+`r par.mle[1]` (due to the additional number of parameters in the former model).
+The GLS estimates of the outlier regression parameters (we exclude the first
+mean parameter, corresponding to the polynomial trend coefficient) are given by
+
+```{r}
+beta.reg <- psi.mle.reg[(length(psi.mle.reg)-dim(X.mat)[2]+1):length(psi.mle.reg)]
+```
+
+Finally, the extreme-value adjustment (according to Proposition 2 of the paper) 
+is given by the following:
+
+```{r}
+x.ev.reg <- x - X.mat %*% beta.reg
+```
+
+We make a comparison of the extreme-value adjustments: the ME is in blue with
+shaded bounds, and overlaid is the RegARIMA in green. There is little discrepancy,
+and the adjustments would be identical except for differences in parameter
+estimates; also, the RegARIMA adjustment is not computed for the forecast and
+backcast leads.  
+
+```{r}
+maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
+lines(x.ev.reg,col=3)
+```
+
+
 ## Get Seasonal Adjustment
 
 For the application of seasonal adjustment, we first define a set of linear
