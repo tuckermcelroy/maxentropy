@@ -157,7 +157,7 @@ plot(ts.resid)
 ```
 
 We can check the residuals for autocorrelation. The model is not perfect, but 
-is sufficient for the purposes of extreme-value adjustment and seasonal
+is sufficient for the purposes of extreme value adjustment and seasonal
 adjustment.
 
 ```{r}
@@ -258,7 +258,7 @@ ao_mod <- ao+H
 ls_mod <- ls+H
 ```
 
-First, we consider full shrinkage, or standard extreme-value adjustment. This is
+First, we consider full shrinkage, or standard extreme value adjustment. This is
 obtained by setting $\alpha = 1$ in formula (13) of the paper. We use the function
 *maxent.ev* to provide various outputs, including the projection of extremes onto 
 regular values, the shrinkage of extremes, and the entropified data vector. 
@@ -310,7 +310,7 @@ maxent.plot(x.ext,x.entropy,mse.entropy,option=2,top.bound=6,bot.bound=-2)
 
 ## Alternative Results from RegARIMA
 
-We can also get an extreme-value adjustment from the RegARIMA approach, because
+We can also get an extreme value adjustment from the RegARIMA approach, because
 there are no missing values. However, we must refit the model because now there
 are additional model parameters corresponding to the outlier effects. First,
 we construct the full regression matrix (together with the trend polynomial)
@@ -339,14 +339,14 @@ mean parameter, corresponding to the polynomial trend coefficient) are given by
 beta.reg <- psi.mle.reg[(length(psi.mle.reg)-dim(X.mat)[2]+1):length(psi.mle.reg)]
 ```
 
-Finally, the extreme-value adjustment (according to Proposition 2 of the paper) 
+Finally, the extreme value adjustment (according to Proposition 2 of the paper) 
 is given by the following:
 
 ```{r}
 x.ev.reg <- x - X.mat %*% beta.reg
 ```
 
-We make a comparison of the extreme-value adjustments: the ME is in blue with
+We make a comparison of the extreme value adjustments: the ME is in blue with
 shaded bounds, and overlaid is the RegARIMA in green. There is little discrepancy,
 and the adjustments would be identical except for differences in parameter
 estimates; also, the RegARIMA adjustment is not computed for the forecast and
@@ -410,7 +410,7 @@ for(i in 2:n)
 
 Our next step is to generate a sufficient number of forecasts and backcasts,
 which is based on computing half the length of the filters. The following code
-is similar to that used in the extreme-value adjustment above.
+is similar to that used in the extreme value adjustment above.
 
 ```{r}
 H <- shift
@@ -433,7 +433,7 @@ mse.entropy <- out[[8]]
 ```
 
 At this point we have *x.entropy*, the data corrected for extremes and casted 
-values; taking the difference with *x.casted* isolates the extreme-value
+values; taking the difference with *x.casted* isolates the extreme value
 adjustment, to which we apply the filter matrix *psiMat_sa*. However, to obtain
 the seasonal adjustment we must add the outlier effects back.
 
